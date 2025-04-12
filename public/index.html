@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Deteksi Tikus</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3b82f6',
+              secondary: '#64748b',
+              success: '#10b981',
+              danger: '#ef4444',
+              warning: '#f59e0b',
+              info: '#06b6d4'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .detection-log {
+        height: 300px;
+        overflow-y: auto;
+      }
+      .table-container {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .status-online {
+        background-color: #10b981;
+      }
+      .status-offline {
+        background-color: #ef4444;
+      }
+      .status-unknown {
+        background-color: #9ca3af;
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      /* Penting: pastikan mode gelap terdeteksi dengan benar */
+      @media (prefers-color-scheme: dark) {
+        .dark\:bg-gray-700 {
+          background-color: #374151 !important;
+        }
+        .dark\:bg-gray-800 {
+          background-color: #1f2937 !important;
+        }
+        .dark\:bg-gray-900 {
+          background-color: #111827 !important;
+        }
+        .dark\:text-white {
+          color: #fff !important;
+        }
+        .dark\:text-gray-300 {
+          color: #d1d5db !important;
+        }
+        .dark\:text-gray-400 {
+          color: #9ca3af !important;
+        }
+        .dark\:border-gray-700 {
+          border-color: #374151 !important;
+        }
+      }
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+      /* Animation */
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      .transition-all {
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Header dan Navigasi -->
+      <div class="bg-blue-600 text-white p-4 rounded-lg shadow-md mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between">
+          <h1 class="text-2xl font-bold mb-2 sm:mb-0">Sistem Deteksi Tikus</h1>
+          
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+              <span class="status-indicator status-unknown" id="connectionStatus"></span>
+              <span id="connectionText" class="text-sm">Status koneksi...</span>
+            </div>
+            
+            <a href="/analytics.html" class="px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-md text-sm transition-colors flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Analisis Heatmap
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <!-- Status dan Kontrol Perangkat -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
+            <!-- Card header -->
+            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+              <h2 class="text-xl font-bold text-gray-800 dark:text-white">Status & Kontrol Perangkat</h2>
+            </div>
+            
+            <div class="p-6">
+              <!-- Status Info Cards -->
+              <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Informasi Perangkat
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4" id="deviceInfo">
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">ID:</span>
+                    <span id="deviceId" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">MAC:</span>
+                    <span id="deviceMac" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">IP:</span>
+                    <span id="deviceIp" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">Mode:</span>
+                    <span id="deviceMode" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">Sensor:</span>
+                    <span id="sensorStatus" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">Deteksi:</span>
+                    <span id="detectionCount" class="text-sm ml-1 text-gray-800 dark:text-white">0</span>
+                  </div>
+                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">Uptime:</span>
+                    <span id="deviceUptime" class="text-sm ml-1 text-gray-800 dark:text-white">-</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Kontrol Perangkat -->
+              <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Kontrol Sensor & Perangkat
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                  <button id="btnPirOn" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Aktifkan Sensor
+                  </button>
+                  <button id="btnPirOff" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Matikan Sensor
+                  </button>
+                  <button id="btnTestBuzzer" class="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 01.707-7.07M2.05 11.684a9 9 0 01.707-12.728" />
+                    </svg>
+                    Test Buzzer
+                  </button>
+                  <button id="btnRestart" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Restart
+                  </button>
+                  <button id="btnResetCounter" class="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Reset Counter
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Mode Operasi -->
+              <div>
+                <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Mode Operasi
+                </h3>
+                <div class="grid grid-cols-3 gap-2">
+                  <button id="btnModeNormal" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Normal
+                  </button>
+                  <button id="btnModeSensitive" class="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Sensitif
+                  </button>
+                  <button id="btnModeSilent" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                    Senyap
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Konfigurasi -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <!-- Card header -->
+            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+              <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Konfigurasi Perangkat
+              </h2>
+            </div>
+            
+            <div class="p-6">
+              <form id="configForm" class="space-y-4">
+                <!-- Deteksi settings -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h3 class="text-md font-semibold text-gray-800 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+                    Pengaturan Deteksi
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label for="motionCooldown" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cooldown Deteksi (ms):</label>
+                      <input type="number" id="motionCooldown" name="motion_cooldown" min="1000" max="60000" value="5000" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                    </div>
+                    
+                    <div>
+                      <label for="pirSensitivity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivitas PIR (0-100):</label>
+                      <input type="number" id="pirSensitivity" name="pir_sensitivity" min="0" max="100" value="75" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Alert settings -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h3 class="text-md font-semibold text-gray-800 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+                    Pengaturan Alert
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label for="buzzerPattern" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pola Buzzer:</label>
+                      <select id="buzzerPattern" name="buzzer_pattern" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                        <option value="ultrasonic">Ultrasonik</option>
+                        <option value="varying" selected>Variasi</option>
+                        <option value="aggressive">Agresif</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label for="buzzerEnabled" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buzzer:</label>
+                      <select id="buzzerEnabled" name="buzzer_enabled" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                        <option value="true">Aktif</option>
+                        <option value="false">Nonaktif</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label for="alertRepeats" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah Pengulangan Alert:</label>
+                      <input type="number" id="alertRepeats" name="alert_repeats" min="1" max="10" value="3" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                    </div>
+                    
+                    <div>
+                      <label for="ledBrightness" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kecerahan LED (0-255):</label>
+                      <input type="number" id="ledBrightness" name="led_brightness" min="0" max="255" value="255" 
+                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pt-2">
+                  <button type="button" id="btnSaveConfig" 
+                    class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Simpan Konfigurasi
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <!-- Log Deteksi Realtime -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
+            <!-- Card header -->
+            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+              <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                Log Deteksi Realtime
+              </h2>
+            </div>
+            
+            <div class="p-6">
+              <div class="detection-log border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-900" id="detectionLog">
+                <!-- Log items will be added here -->
+                <div class="flex justify-center items-center h-48 text-gray-400 dark:text-gray-500 text-sm italic">
+                  Menunggu deteksi baru...
+                </div>
+              </div>
+              <div class="flex justify-end gap-2 mt-4">
+                <button id="btnTestDetection" 
+                  class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Tambah Data Test
+                </button>
+                <button id="btnClearDb" 
+                  class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium transition-colors flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Hapus Semua Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabel Data Deteksi -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mt-6">
+        <!-- Card header -->
+        <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+          <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+            Data Deteksi dari Database
+          </h2>
+        </div>
+        
+        <div class="p-6">
+          <!-- Filter dan jumlah data -->
+          <div class="flex flex-wrap justify-between items-center mb-4">
+            <!-- Filter -->
+            <div class="flex space-x-4 mb-2 sm:mb-0">
+              <div>
+                <label for="zoneFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zona</label>
+                <select id="zoneFilter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                  <option value="">Semua</option>
+                  <option value="1">Zona 1</option>
+                  <option value="2">Zona 2</option>
+                  <option value="3">Zona 3</option>
+                  <option value="4">Zona 4</option>
+                </select>
+              </div>
+              <div>
+                <label for="limitFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah Data</label>
+                <select id="limitFilter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perbarui</label>
+                <button id="btnRefreshData" class="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-2 w-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Jumlah data yang ditemukan -->
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+              <span id="resultCount">0 data ditemukan</span>
+            </div>
+          </div>
+
+          <!-- Loading indicator -->
+          <div id="loadingIndicator" class="hidden items-center justify-center p-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span class="ml-2 text-gray-600 dark:text-gray-400">Memuat data...</span>
+          </div>
+          
+          <!-- Empty data message -->
+          <div id="emptyDataMessage" class="hidden text-center py-8 text-gray-500 dark:text-gray-400">
+            Tidak ada data deteksi yang tersedia.
+          </div>
+          
+          <!-- Tabel data deteksi -->
+          <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th class="sticky top-0 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Waktu</th>
+                  <th class="sticky top-0 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Perangkat</th>
+                  <th class="sticky top-0 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Zona</th>
+                  <th class="sticky top-0 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Counter</th>
+                  <th class="sticky top-0 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Durasi</th>
+                  <th class="sticky top-0 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Mode</th>
+                  <th class="sticky top-0 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="detectionTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- Data akan ditambahkan di sini -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal Detail -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex justify-center items-center p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-auto overflow-hidden transform transition-all">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Deteksi</h3>
+          <button id="closeDetailModal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div id="detailContent" class="p-6">
+          <!-- Detail akan diisi melalui JavaScript -->
+        </div>
+        <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 text-right">
+          <button id="closeDetailBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal untuk tampilan detail detection -->
+    <div id="detectionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-auto">
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Detail Deteksi</h2>
+            <button onclick="closeDetectionModal()" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="detectionDetails" class="text-gray-700">
+            <!-- Detail akan ditampilkan di sini oleh JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      // DOM Elements
+      const connectionStatus = document.getElementById('connectionStatus');
+      const connectionText = document.getElementById('connectionText');
+      const deviceId = document.getElementById('deviceId');
+      const deviceMac = document.getElementById('deviceMac');
+      const deviceIp = document.getElementById('deviceIp');
+      const deviceMode = document.getElementById('deviceMode');
+      const sensorStatus = document.getElementById('sensorStatus');
+      const detectionCount = document.getElementById('detectionCount');
+      const deviceUptime = document.getElementById('deviceUptime');
+      const detectionLog = document.getElementById('detectionLog');
+      
+      // Control buttons
+      const btnPirOn = document.getElementById('btnPirOn');
+      const btnPirOff = document.getElementById('btnPirOff');
+      const btnTestBuzzer = document.getElementById('btnTestBuzzer');
+      const btnRestart = document.getElementById('btnRestart');
+      const btnModeNormal = document.getElementById('btnModeNormal');
+      const btnModeSensitive = document.getElementById('btnModeSensitive');
+      const btnModeSilent = document.getElementById('btnModeSilent');
+      const btnSaveConfig = document.getElementById('btnSaveConfig');
+      
+      // WebSocket connection
+      let ws;
+      let deviceStatus = {};
+      
+      // Connect to WebSocket with retry mechanism
+      function connectWebSocket() {
+        try {
+          connectionStatus.className = 'status-indicator status-unknown';
+          connectionText.textContent = 'Menghubungkan...';
+          
+          // Create WebSocket connection
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const wsUrl = `${protocol}//${window.location.host}`;
+          console.log('Connecting to WebSocket at:', wsUrl);
+          
+          // Close existing connection if open
+          if (ws) {
+            try {
+              ws.close();
+            } catch (e) {
+              console.warn('Error closing existing WebSocket:', e);
+            }
+          }
+          
+          ws = new WebSocket(wsUrl);
+          
+          ws.onopen = function() {
+            connectionStatus.className = 'status-indicator status-online';
+            connectionText.textContent = 'Terhubung';
+            console.log('WebSocket connected successfully');
+            
+            // Kirim pesan ping untuk menguji koneksi
+            setTimeout(() => {
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: 'ping', 
+                  timestamp: new Date().toISOString(),
+                  message: 'Connection established'
+                }));
+                console.log('Initial ping sent to server');
+              }
+            }, 1000);
+            
+            // Request status update
+            setTimeout(() => {
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: 'request', 
+                  request: 'status',
+                  timestamp: new Date().toISOString()
+                }));
+                console.log('Status update requested from server');
+              }
+            }, 2000);
+          };
+          
+          ws.onclose = function(event) {
+            connectionStatus.className = 'status-indicator status-offline';
+            connectionText.textContent = 'Terputus';
+            console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
+            
+            // Try to reconnect after 5 seconds
+            console.log('Scheduling reconnection in 5 seconds...');
+            setTimeout(connectWebSocket, 5000);
+          };
+          
+          ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            connectionStatus.className = 'status-indicator status-offline';
+            connectionText.textContent = 'Error';
+          };
+          
+          ws.onmessage = function(event) {
+            try {
+              // Tampilkan data mentah untuk debugging
+              console.log('Raw WebSocket message received:', event.data);
+              
+              let data;
+              try {
+                data = JSON.parse(event.data);
+              } catch (parseError) {
+                console.error('Failed to parse WebSocket message:', parseError);
+                console.log('Raw message content:', event.data);
+                return;
+              }
+              
+              handleWebSocketMessage(data);
+            } catch (err) {
+              console.error('Error processing WebSocket message:', err, 'Raw data:', event.data);
+            }
+          };
+        } catch (err) {
+          console.error('Error connecting to WebSocket:', err);
+          connectionStatus.className = 'status-indicator status-offline';
+          connectionText.textContent = 'Gagal terhubung';
+          
+          // Try to reconnect after 5 seconds
+          console.log('Scheduling reconnection in 5 seconds due to error...');
+          setTimeout(connectWebSocket, 5000);
+        }
+      }
+      
+      // Handle WebSocket messages
+      function handleWebSocketMessage(data) {
+        console.log('Received message:', data);
+        
+        try {
+          // Handle different message types
+          if (data.topic && data.topic.includes('telemetry')) {
+            // Detection event from device
+            if (data.data) {
+              console.log('Processing telemetry data:', data.data);
+              addDetectionLogEntry(data.data);
+            } else {
+              console.warn('Telemetry data is empty');
+            }
+            
+            // Tidak perlu refresh tabel data saat menerima telemetri baru
+            // Tabel hanya diupdate saat pertama kali load atau filter diubah
+          } else if (data.topic && data.topic.includes('status')) {
+            // Status update from device
+            if (data.data) {
+              console.log('Processing status data:', data.data);
+              updateDeviceStatus(data.data);
+            } else {
+              console.warn('Status data is empty');
+            }
+          } else if (data.type === 'info') {
+            console.log('Info message:', data.message);
+          } else if (data.type === 'pong') {
+            console.log('Pong received from server');
+          } else if (data.event === 'motion_detected' || data.timestamp || data.detectionTime) {
+            // Might be a direct detection event without topic wrapping
+            console.log('Processing direct detection data:', data);
+            addDetectionLogEntry(data);
+            // Tidak perlu refresh tabel data saat menerima deteksi baru
+          } else if (data.status || data.device_id || data.mac) {
+            // Might be direct status update without topic wrapping
+            console.log('Processing direct status data:', data);
+            updateDeviceStatus(data);
+          } else {
+            console.log('Unhandled message type:', data);
+          }
+        } catch (error) {
+          console.error('Error in handleWebSocketMessage:', error);
+        }
+      }
+      
+      // Update device status display
+      function updateDeviceStatus(status) {
+        console.log('Updating device status:', status);
+        
+        // Store the latest status
+        deviceStatus = status;
+        
+        // Pastikan deviceInfo element ada
+        const deviceInfoElement = document.getElementById('deviceInfo');
+        if (!deviceInfoElement) {
+          console.error('deviceInfo element not found');
+          return;
+        }
+        
+        // Update UI elements
+        if (status.device_id) deviceId.textContent = status.device_id;
+        if (status.mac) deviceMac.textContent = status.mac;
+        if (status.ip) deviceIp.textContent = status.ip;
+        
+        if (status.status) {
+          // Operation mode
+          if (status.config && status.config.operation_mode) {
+            deviceMode.textContent = capitalizeFirstLetter(status.config.operation_mode);
+          }
+          
+          // PIR sensor status
+          if (status.status.pir_active !== undefined) {
+            sensorStatus.textContent = status.status.pir_active ? 'Aktif' : 'Nonaktif';
+            // Update button states
+            btnPirOn.disabled = status.status.pir_active;
+            btnPirOff.disabled = !status.status.pir_active;
+          }
+          
+          // Detection count
+          if (status.status.motion_count !== undefined) {
+            detectionCount.textContent = status.status.motion_count;
+          }
+
+          // Update mode buttons based on current mode
+          if (status.config && status.config.operation_mode) {
+            btnModeNormal.disabled = status.config.operation_mode === 'normal';
+            btnModeSensitive.disabled = status.config.operation_mode === 'sensitive';
+            btnModeSilent.disabled = status.config.operation_mode === 'silent';
+          }
+        }
+        
+        // Update uptime
+        if (status.uptime_ms) {
+          const seconds = Math.floor(status.uptime_ms / 1000);
+          const minutes = Math.floor(seconds / 60);
+          const hours = Math.floor(minutes / 60);
+          const days = Math.floor(hours / 24);
+          
+          let uptimeText = '';
+          if (days > 0) uptimeText += `${days}d `;
+          if (hours % 24 > 0) uptimeText += `${hours % 24}h `;
+          if (minutes % 60 > 0) uptimeText += `${minutes % 60}m `;
+          if (seconds % 60 > 0) uptimeText += `${seconds % 60}s`;
+          
+          deviceUptime.textContent = uptimeText;
+        }
+        
+        // Update form with current configuration
+        if (status.config) {
+          if (status.config.motion_cooldown) {
+            document.getElementById('motionCooldown').value = status.config.motion_cooldown;
+          }
+          
+          if (status.config.pir_sensitivity) {
+            document.getElementById('pirSensitivity').value = status.config.pir_sensitivity;
+          }
+          
+          if (status.config.buzzer_pattern) {
+            document.getElementById('buzzerPattern').value = status.config.buzzer_pattern;
+          }
+          
+          if (status.config.alert_repeats) {
+            document.getElementById('alertRepeats').value = status.config.alert_repeats;
+          }
+
+          if (status.config.led_brightness) {
+            document.getElementById('ledBrightness').value = status.config.led_brightness;
+          }
+
+          // Tambahkan indikator buzzer status
+          if (status.config.buzzer_enabled !== undefined) {
+            const buzzerStatus = document.createElement('div');
+            buzzerStatus.className = 'bg-gray-100 dark:bg-gray-700 p-3 rounded-md';
+            buzzerStatus.innerHTML = `<span class="text-sm font-semibold text-gray-600 dark:text-gray-300">Buzzer:</span>
+                                     <span id="buzzerStatus" class="text-sm ml-1 text-gray-800 dark:text-white">${status.config.buzzer_enabled ? 'Aktif' : 'Nonaktif'}</span>`;
+
+            // Cek apakah elemen sudah ada
+            const existingElement = document.getElementById('buzzerStatus');
+            if (!existingElement) {
+              deviceInfoElement.appendChild(buzzerStatus);
+            } else {
+              existingElement.textContent = status.config.buzzer_enabled ? 'Aktif' : 'Nonaktif';
+            }
+          }
+
+          // Tambahkan indikator RSSI
+          if (status.rssi !== undefined) {
+            const rssiElement = document.getElementById('rssiValue');
+            if (rssiElement) {
+              rssiElement.textContent = status.rssi + ' dBm';
+            } else {
+              const rssiInfo = document.createElement('div');
+              rssiInfo.className = 'bg-gray-100 dark:bg-gray-700 p-3 rounded-md';
+              rssiInfo.innerHTML = `<span class="text-sm font-semibold text-gray-600 dark:text-gray-300">RSSI:</span>
+                                   <span id="rssiValue" class="text-sm ml-1 text-gray-800 dark:text-white">${status.rssi} dBm</span>`;
+              deviceInfoElement.appendChild(rssiInfo);
+            }
+          }
+        }
+      }
+      
+      // Add a new detection log entry
+      function addDetectionLogEntry(data) {
+        console.log('Adding detection log entry:', data);
+        
+        const logElement = document.getElementById('detectionLog');
+        if (!logElement) {
+          console.error('detectionLog element not found');
+          return;
+        }
+        
+        const logItem = document.createElement('div');
+        logItem.className = 'mb-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm transition-all hover:shadow-md';
+        
+        const timestamp = data.timestamp || data.detectionTime || new Date().toISOString();
+        const time = new Date(timestamp).toLocaleTimeString();
+        let content = `<div class="text-xs text-gray-500 dark:text-gray-400">${time}</div>`;
+        content += `<div class="mt-1">`;
+        
+        if (data.event === 'motion_detected') {
+          content += `<div class="font-semibold text-gray-900 dark:text-white">Deteksi gerakan!</div>`;
+          if (data.motion_count) content += `<div class="text-sm text-gray-700 dark:text-gray-300">Counter: ${data.motion_count}</div>`;
+          if (data.duration_ms) content += `<div class="text-sm text-gray-700 dark:text-gray-300">Durasi: ${data.duration_ms}ms</div>`;
+          if (data.device && data.device.operation_mode) {
+            content += `<div class="text-sm text-gray-700 dark:text-gray-300">Mode: ${data.device.operation_mode}</div>`;
+          } else if (data.device_config && data.device_config.operation_mode) {
+            content += `<div class="text-sm text-gray-700 dark:text-gray-300">Mode: ${data.device_config.operation_mode}</div>`;
+          } else if (data.operationMode) {
+            content += `<div class="text-sm text-gray-700 dark:text-gray-300">Mode: ${data.operationMode}</div>`;
+          }
+          if (data.zone) {
+            content += `<div class="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Zona ${data.zone}</div>`;
+          }
+        } else {
+          content += `<div class="font-semibold text-gray-900 dark:text-white">Event: ${data.event || 'unknown'}</div>`;
+        }
+        
+        content += `</div>`;
+        logItem.innerHTML = content;
+        
+        logElement.insertBefore(logItem, logElement.firstChild);
+        
+        // Limit log entries to 100
+        if (logElement.children.length > 100) {
+          logElement.removeChild(logElement.lastChild);
+        }
+
+        // Update detection count in UI
+        if (data.motion_count) {
+          detectionCount.textContent = data.motion_count;
+        }
+      }
+      
+      // Send API requests
+      async function sendApiRequest(endpoint, data) {
+        try {
+          const response = await fetch(`/api/devices${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+          
+          const result = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(result.message || 'Terjadi kesalahan');
+          }
+          
+          return result;
+        } catch (error) {
+          console.error(`Error sending request to ${endpoint}:`, error);
+          alert(`Gagal: ${error.message}`);
+          return null;
+        }
+      }
+
+      // Format strings dengan defensive coding
+      function capitalizeFirstLetter(string) {
+        if (!string) return '';
+        if (typeof string !== 'string') return String(string);
+        return string.charAt(0).toUpperCase() + string.slice(1);
+      }
+      
+      // Fungsi untuk mendapatkan style CSS berdasarkan mode operasi dengan defensive coding
+      function getOperationModeStyle(mode) {
+        // Pastikan mode tidak undefined atau null
+        if (!mode) mode = 'normal';
+        
+        // Convert to string if needed
+        if (typeof mode !== 'string') mode = String(mode);
+        
+        switch(mode.toLowerCase()) {
+          case 'alarm':
+            return 'bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'disarmed':
+            return 'bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'home':
+            return 'bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'away':
+            return 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'sensitive':
+            return 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'silent':
+            return 'bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium';
+          case 'normal':
+          default:
+            return 'bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium';
+        }
+      }
+      
+      // Event Listeners
+      btnPirOn.addEventListener('click', async () => {
+        try {
+          btnPirOn.disabled = true;
+          const result = await sendApiRequest('/pir/toggle', { active: true });
+          if (result && result.status === 'success') {
+            console.log('Sensor berhasil diaktifkan');
+          }
+        } catch (error) {
+          console.error('Error activating PIR:', error);
+          // Enable button kembali jika gagal
+          btnPirOn.disabled = false;
+        }
+      });
+      
+      btnPirOff.addEventListener('click', async () => {
+        try {
+          btnPirOff.disabled = true;
+          const result = await sendApiRequest('/pir/toggle', { active: false });
+          if (result && result.status === 'success') {
+            console.log('Sensor berhasil dinonaktifkan');
+          }
+        } catch (error) {
+          console.error('Error deactivating PIR:', error);
+          // Enable button kembali jika gagal
+          btnPirOff.disabled = false;
+        }
+      });
+      
+      btnTestBuzzer.addEventListener('click', () => {
+        sendApiRequest('/buzzer/test', {});
+      });
+      
+      btnRestart.addEventListener('click', () => {
+        if (confirm('Apakah Anda yakin ingin me-restart perangkat?')) {
+          sendApiRequest('/restart', {});
+        }
+      });
+      
+      btnModeNormal.addEventListener('click', () => {
+        sendApiRequest('/mode', { mode: 'normal' });
+      });
+      
+      btnModeSensitive.addEventListener('click', () => {
+        sendApiRequest('/mode', { mode: 'sensitive' });
+      });
+      
+      btnModeSilent.addEventListener('click', () => {
+        sendApiRequest('/mode', { mode: 'silent' });
+      });
+      
+      btnSaveConfig.addEventListener('click', () => {
+        try {
+          const form = document.getElementById('configForm');
+          const formData = new FormData(form);
+          const config = {};
+          
+          formData.forEach((value, key) => {
+            // Handle buzzer_enabled menjadi boolean
+            if (key === 'buzzer_enabled') {
+              config[key] = value === 'true';
+            }
+            // Convert numeric values
+            else if (!isNaN(value) && value !== '') {
+              config[key] = Number(value);
+            } else {
+              config[key] = value;
+            }
+          });
+          
+          console.log('Saving config:', config);
+          sendApiRequest('/config', config)
+            .then(response => {
+              if (response && response.status === 'success') {
+                console.log('Config saved successfully');
+                // Optional: tampilkan pesan sukses ke user
+                alert('Konfigurasi berhasil disimpan');
+              }
+            })
+            .catch(error => {
+              console.error('Error saving config:', error);
+              alert('Gagal menyimpan konfigurasi: ' + error.message);
+            });
+        } catch (error) {
+          console.error('Error in save config handler:', error);
+          alert('Terjadi kesalahan: ' + error.message);
+        }
+      });
+
+      // Initialize
+      connectWebSocket();
+      
+      // Fungsi untuk memperbarui status koneksi MQTT
+      function updateMQTTStatus(status) {
+        const deviceInfoElement = document.getElementById('deviceInfo');
+        if (!deviceInfoElement) {
+          console.error('deviceInfo element not found');
+          return;
+        }
+        
+        const mqttStatusElement = document.getElementById('mqttStatus');
+        if (!mqttStatusElement) {
+          const mqttStatusDiv = document.createElement('div');
+          mqttStatusDiv.className = 'bg-gray-100 dark:bg-gray-700 p-3 rounded-md';
+          mqttStatusDiv.innerHTML = `<span class="text-sm font-semibold text-gray-600 dark:text-gray-300">MQTT:</span>
+                                    <span id="mqttStatus" class="text-sm ml-1 text-gray-800 dark:text-white">${status ? 'Terhubung' : 'Terputus'}</span>`;
+          deviceInfoElement.appendChild(mqttStatusDiv);
+        } else {
+          mqttStatusElement.textContent = status ? 'Terhubung' : 'Terputus';
+        }
+      }
+
+      // Perbarui fungsi handleWebSocketMessage untuk menangani status MQTT
+      const originalHandleWebSocketMessage = handleWebSocketMessage;
+      handleWebSocketMessage = function(data) {
+        originalHandleWebSocketMessage(data);
+        
+        // Handle MQTT status message
+        if (data.type === 'mqtt_status') {
+          updateMQTTStatus(data.connected);
+        }
+      };
+
+      // Tambahkan event listener untuk tombol hapus semua data
+      const btnClearDb = document.getElementById('btnClearDb');
+      btnClearDb.addEventListener('click', async () => {
+        if (confirm('Apakah Anda yakin ingin menghapus semua data log di database?')) {
+          try {
+            const response = await fetch('/api/detections/all', {
+              method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+              alert('Berhasil menghapus semua data');
+              // Clear UI log juga
+              detectionLog.innerHTML = '';
+              
+              // Refresh tabel data setelah menghapus semua data
+              await loadDetectionData();
+            } else {
+              alert(`Gagal: ${result.message || 'Terjadi kesalahan'}`);
+            }
+          } catch (error) {
+            console.error('Error clearing database:', error);
+            alert(`Gagal: ${error.message}`);
+          }
+        }
+      });
+
+      // Tambahkan event listener untuk tombol test detection
+      document.getElementById('btnTestDetection').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/detections/test', {
+            method: 'POST'
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('Berhasil menambahkan data test');
+            console.log('Test data:', result.data);
+            
+            // Refresh tabel data setelah menambah data test
+            await loadDetectionData();
+          } else {
+            alert(`Gagal: ${result.message || 'Terjadi kesalahan'}`);
+          }
+        } catch (error) {
+          console.error('Error creating test data:', error);
+          alert(`Gagal: ${error.message}`);
+        }
+      });
+
+      // Fungsi untuk memuat data deteksi dari database
+      async function loadDetectionData() {
+        try {
+          console.log('Loading detection data...');
+          
+          // Tampilkan loading indicator
+          document.getElementById('loadingIndicator').style.display = 'flex';
+          document.getElementById('emptyDataMessage').style.display = 'none';
+          
+          // Dapatkan filter, periksa elemen dengan id 'zoneFilter' (format standar yang digunakan)
+          let zone = '';
+          let limit = '10';
+          
+          const zoneFilterElement = document.getElementById('zoneFilter');
+          if (zoneFilterElement) {
+            zone = zoneFilterElement.value;
+            console.log('Zone filter value:', zone);
+          }
+          
+          const limitFilterElement = document.getElementById('limitFilter');
+          if (limitFilterElement) {
+            limit = limitFilterElement.value;
+            console.log('Limit filter value:', limit);
+          }
+          
+          // Buat URL dengan parameter query yang sesuai dengan API backend
+          let url = '/api/detections?';
+          
+          // Hanya tambahkan parameter zone jika nilai tidak kosong
+          if (zone && zone !== '') {
+            url += `zone=${encodeURIComponent(zone)}&`;
+            console.log('Added zone parameter to URL');
+          }
+          
+          // Selalu tambahkan parameter limit karena ini wajib
+          if (limit) {
+            url += `limit=${encodeURIComponent(limit)}`;
+            console.log('Added limit parameter to URL');
+          }
+          
+          console.log('Fetching from URL:', url);
+          
+          // Kirim request
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Detection data received:', data.length, 'items');
+          
+          // Sembunyikan loading indicator
+          document.getElementById('loadingIndicator').style.display = 'none';
+          
+          // Tampilkan pesan jika tidak ada data
+          if (!data || data.length === 0) {
+            document.getElementById('emptyDataMessage').style.display = 'block';
+            document.getElementById('detectionTableBody').innerHTML = '';
+            return;
+          }
+          
+          // Render data ke tabel
+          renderDetectionTable(data);
+        } catch (error) {
+          console.error('Error loading detection data:', error);
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('emptyDataMessage').textContent = `Error: ${error.message}`;
+          document.getElementById('emptyDataMessage').style.display = 'block';
+        }
+      }
+      
+      // Fungsi untuk render data ke tabel
+      function renderDetectionTable(data) {
+        console.log('Rendering detection table with data:', data.length, 'items');
+        
+        const tableBody = document.getElementById('detectionTableBody');
+        if (!tableBody) {
+          console.error('detectionTableBody element not found');
+          return;
+        }
+        
+        tableBody.innerHTML = '';
+        
+        // Tampilkan jumlah data yang ditampilkan sesuai filter
+        const resultCountElement = document.getElementById('resultCount');
+        if (resultCountElement) {
+          resultCountElement.textContent = `${data.length} data ditemukan`;
+        }
+        
+        data.forEach(detection => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
+          
+          // Format waktu
+          const detectionTime = new Date(detection.detectionTime || detection.timestamp);
+          const formattedTime = `${detectionTime.toLocaleDateString()} ${detectionTime.toLocaleTimeString()}`;
+          
+          // Render baris tabel
+          row.innerHTML = `
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">${formattedTime}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">${detection.sensorId || detection.device_id || '-'}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+              ${detection.zone ? 
+                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                  Zona ${detection.zone}
+                </span>` : 
+                '<span class="text-gray-400 dark:text-gray-600">-</span>'
+              }
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900 dark:text-white">${detection.motionCount || detection.motion_count || '<span class="text-gray-400 dark:text-gray-600">-</span>'}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900 dark:text-white">${detection.duration ? `${detection.duration} ms` : (detection.duration_ms ? `${detection.duration_ms} ms` : '-')}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+              ${detection.operationMode || detection.operation_mode ? 
+                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getOperationModeStyle(detection.operationMode || detection.operation_mode)}">
+                  ${capitalizeFirstLetter(detection.operationMode || detection.operation_mode)}
+                </span>` : 
+                '<span class="text-gray-400 dark:text-gray-600">-</span>'
+              }
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+              <button class="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800 transition-colors view-details" data-id="${detection.id || detection._id}">
+                Detail
+              </button>
+            </td>
+          `;
+          
+          tableBody.appendChild(row);
+        });
+        
+        // Tambahkan event listener untuk tombol detail
+        document.querySelectorAll('.view-details').forEach(button => {
+          button.addEventListener('click', () => viewDetectionDetails(button.getAttribute('data-id')));
+        });
+      }
+      
+      // Fungsi untuk melihat detail deteksi
+      async function viewDetectionDetails(id) {
+        try {
+          console.log('Viewing details for detection ID:', id);
+          if (!id) {
+            throw new Error('ID tidak valid');
+          }
+          
+          document.getElementById('loadingIndicator').style.display = 'flex';
+          
+          const response = await fetch(`/api/detections/${id}`);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to load details: ${response.status} ${response.statusText}`);
+          }
+          
+          const detection = await response.json();
+          console.log('Detection details:', detection);
+          
+          // Format waktu
+          const detectionTime = new Date(detection.detectionTime || detection.timestamp);
+          const formattedTime = `${detectionTime.toLocaleDateString()} ${detectionTime.toLocaleTimeString()}`;
+          
+          // Buat HTML untuk detail
+          let detailHtml = `
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ID Deteksi</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.id || detection._id || '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Perangkat</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.sensorId || detection.device_id || '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Waktu Deteksi</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${formattedTime}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.status || '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Zona</div>
+                  <div class="mt-1 text-sm">
+                    ${detection.zone ? 
+                      `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                        Zona ${detection.zone}
+                      </span>` : 
+                      '<span class="text-gray-400 dark:text-gray-600">-</span>'
+                    }
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Counter</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.motionCount || detection.motion_count || '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durasi</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.duration ? `${detection.duration} ms` : (detection.duration_ms ? `${detection.duration_ms} ms` : '-')}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">RSSI</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.rssi ? `${detection.rssi} dBm` : '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mode Operasi</div>
+                  <div class="mt-1 text-sm">
+                    ${detection.operationMode || detection.operation_mode ? 
+                      `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getOperationModeStyle(detection.operationMode || detection.operation_mode)}">
+                        ${capitalizeFirstLetter(detection.operationMode || detection.operation_mode)}
+                      </span>` : 
+                      '<span class="text-gray-400 dark:text-gray-600">-</span>'
+                    }
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MAC Address</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${detection.deviceMac || detection.mac || '-'}</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Uptime</div>
+                  <div class="mt-1 text-sm text-gray-900 dark:text-white">${formatUptime(detection.uptime || detection.uptime_ms)}</div>
+                </div>
+              </div>
+              
+              ${detection.payload ? `
+              <div class="mt-4">
+                <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Payload Data</div>
+                <pre class="bg-gray-50 dark:bg-gray-900 p-3 rounded-md text-xs overflow-auto max-h-32 text-gray-900 dark:text-white">${JSON.stringify(detection.payload, null, 2)}</pre>
+              </div>
+              ` : ''}
+            </div>
+          `;
+          
+          // Update content of detail modal
+          const detailContent = document.getElementById('detailContent');
+          if (!detailContent) {
+            console.error('detailContent element not found');
+            return;
+          }
+          detailContent.innerHTML = detailHtml;
+  
+          // Show detail modal
+          document.getElementById('detailModal').style.display = 'flex';
+          document.getElementById('loadingIndicator').style.display = 'none';
+        } catch (error) {
+          console.error('Error loading detection details:', error);
+          alert(`Error: ${error.message}`);
+          document.getElementById('loadingIndicator').style.display = 'none';
+        }
+      }
+      
+      // Format uptime
+      function formatUptime(uptime) {
+        if (!uptime) return '-';
+        
+        const seconds = Math.floor(uptime / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        let uptimeText = '';
+        if (days > 0) uptimeText += `${days}d `;
+        if (hours % 24 > 0) uptimeText += `${hours % 24}h `;
+        if (minutes % 60 > 0) uptimeText += `${minutes % 60}m `;
+        if (seconds % 60 > 0) uptimeText += `${seconds % 60}s`;
+        
+        return uptimeText || '0s';
+      }
+      
+      // Event listener untuk refresh button
+      document.getElementById('btnRefreshData').addEventListener('click', loadDetectionData);
+      
+      // Muat data awal saat halaman dimuat
+      document.addEventListener('DOMContentLoaded', function() {
+        // Tambahkan event listener ke filter setelah DOM selesai dimuat
+        console.log('Adding filter event listeners...');
+        
+        // Event listener untuk filter zona
+        const zoneFilter = document.getElementById('zoneFilter');
+        if (zoneFilter) {
+          console.log('Zone filter element found, adding event listener');
+          zoneFilter.addEventListener('change', function() {
+            console.log('Zone filter changed to:', this.value);
+            loadDetectionData();
+          });
+        } else {
+          console.warn('Zone filter element not found');
+        }
+        
+        // Event listener untuk filter jumlah data
+        const limitFilter = document.getElementById('limitFilter');
+        if (limitFilter) {
+          console.log('Limit filter element found, adding event listener');
+          limitFilter.addEventListener('change', function() {
+            console.log('Limit filter changed to:', this.value);
+            loadDetectionData();
+          });
+        } else {
+          console.warn('Limit filter element not found');
+        }
+        
+        // Event listener untuk tombol refresh data
+        const btnRefreshData = document.getElementById('btnRefreshData');
+        if (btnRefreshData) {
+          console.log('Refresh button found, adding event listener');
+          btnRefreshData.addEventListener('click', function() {
+            console.log('Refresh button clicked, loading fresh data');
+            loadDetectionData();
+          });
+        } else {
+          console.warn('Refresh button not found');
+        }
+        
+        // Load initial data
+        loadDetectionData();
+      });
+      
+      // Event listener untuk tombol close modal
+      document.addEventListener('DOMContentLoaded', function() {
+        // Event listener untuk close detail modal
+        const closeDetailModalBtn = document.getElementById('closeDetailModal');
+        if (closeDetailModalBtn) {
+          closeDetailModalBtn.addEventListener('click', function() {
+            document.getElementById('detailModal').style.display = 'none';
+          });
+        }
+        
+        // Event listener untuk close button di modal
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        if (closeDetailBtn) {
+          closeDetailBtn.addEventListener('click', function() {
+            document.getElementById('detailModal').style.display = 'none';
+          });
+        }
+        
+        // Tutup modal jika user klik di luar modal
+        window.addEventListener('click', function(event) {
+          const modal = document.getElementById('detailModal');
+          if (event.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+      });
+
+      // Fungsi untuk menutup modal deteksi
+      function closeModal() {
+        const detectionModal = document.getElementById('detectionModal');
+        if (detectionModal) {
+          detectionModal.classList.add('hidden');
+        }
+      }
+
+      // Fungsi untuk menampilkan modal dengan detail detection
+      function showDetectionDetails(detection) {
+        const modal = document.getElementById('detectionModal');
+        const detailsContainer = document.getElementById('detectionDetails');
+        
+        // Format timestamp
+        const timestamp = new Date(detection.timestamp);
+        const formattedDate = timestamp.toLocaleDateString('id-ID', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        const formattedTime = timestamp.toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        // Siapkan HTML untuk detail
+        let detailsHTML = `
+          <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-900 mb-1">Informasi Deteksi</h3>
+            <p class="text-sm text-gray-600 mb-2">${formattedDate} - ${formattedTime}</p>
+            
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div class="font-medium">ID:</div>
+              <div>${detection._id || '-'}</div>
+              
+              <div class="font-medium">Zone:</div>
+              <div>${detection.zone || '-'}</div>
+              
+              <div class="font-medium">Jenis Event:</div>
+              <div>${detection.event === 'motion_detected' ? 'Deteksi Gerakan' : detection.event}</div>
+              
+              <div class="font-medium">Nilai Sensor:</div>
+              <div>${detection.value || '-'}</div>
+              
+              <div class="font-medium">Mode Operasi:</div>
+              <div>
+                <span class="${getOperationModeStyle(detection.mode)}">
+                  ${detection.mode || 'normal'}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-900 mb-1">Status Perangkat</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div class="font-medium">Battery:</div>
+              <div>${detection.battery !== undefined ? `${detection.battery}%` : '-'}</div>
+              
+              <div class="font-medium">Signal:</div>
+              <div>${detection.signal_strength !== undefined ? `${detection.signal_strength}%` : '-'}</div>
+              
+              <div class="font-medium">Temperature:</div>
+              <div>${detection.temperature !== undefined ? `${detection.temperature}°C` : '-'}</div>
+            </div>
+          </div>
+        `;
+        
+        // Tambahkan payload JSON jika ada
+        if (detection.payload) {
+          let formattedPayload;
+          try {
+            formattedPayload = JSON.stringify(detection.payload, null, 2);
+          } catch (e) {
+            formattedPayload = JSON.stringify(detection.payload);
+          }
+          
+          detailsHTML += `
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-1">Data Payload</h3>
+              <pre class="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">${formattedPayload}</pre>
+            </div>
+          `;
+        }
+        
+        detailsContainer.innerHTML = detailsHTML;
+        modal.classList.remove('hidden');
+      }
+
+      // Fungsi untuk menutup modal
+      function closeDetectionModal() {
+        const modal = document.getElementById('detectionModal');
+        modal.classList.add('hidden');
+      }
+
+      // Tambahkan event listener pada document ready
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Document loaded, initializing...');
+        
+        // Setup modal event listeners
+        const detectionModal = document.getElementById('detectionModal');
+        const modalContent = document.querySelector('.modal-content');
+        if (detectionModal && modalContent) {
+          detectionModal.addEventListener('click', function(event) {
+            if (event.target === detectionModal) {
+              closeDetectionModal();
+            }
+          });
+          
+          // Prevent clicks on modal content from closing the modal
+          modalContent.addEventListener('click', function(event) {
+            event.stopPropagation();
+          });
+        }
+        
+        // Validasi semua DOM element
+        const domValid = validateDOMElements();
+        
+        // Event listener untuk reset counter
+        const btnResetCounter = document.getElementById('btnResetCounter');
+        if (btnResetCounter) {
+          btnResetCounter.addEventListener('click', () => {
+            if (confirm('Apakah Anda yakin ingin mereset counter deteksi?')) {
+              sendApiRequest('/control', { reset_count: true });
+            }
+          });
+        } else {
+          console.error('Reset counter button not found');
+        }
+        
+        // Event listener untuk tombol test fungsi
+        const btnTestFunction = document.createElement('button');
+        btnTestFunction.textContent = 'Test Fungsionalitas';
+        btnTestFunction.className = 'px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md text-sm font-medium transition-colors fixed bottom-4 right-4 z-50';
+        btnTestFunction.addEventListener('click', testAllFunctions);
+        document.body.appendChild(btnTestFunction);
+        
+        // Inisialisasi koneksi WebSocket
+        connectWebSocket();
+        
+        // Load data awal
+        if (domValid) {
+          console.log('Loading initial data...');
+          loadDetectionData();
+        }
+        
+        // Test server connection
+        testServerConnection();
+        
+        // Jadwalkan pengecekan menyeluruh setelah 5 detik
+        setTimeout(testAllFunctions, 5000);
+      });
+      
+      // Fungsi untuk mengetes koneksi server
+      async function testServerConnection() {
+        try {
+          console.log('Testing server connection...');
+          const response = await fetch('/api');
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Server status:', data);
+            
+            // Jika server OK, coba ping websocket juga
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'ping',
+                timestamp: new Date().toISOString(),
+                message: 'Testing connection'
+              }));
+              console.log('WebSocket ping sent');
+            } else {
+              console.warn('WebSocket not connected, reconnecting...');
+              connectWebSocket();
+            }
+            
+            // Tidak perlu refresh data otomatis setelah koneksi berhasil
+            // Data hanya diperbarui saat halaman dimuat pertama kali atau filter diubah
+            
+            return true;
+          } else {
+            console.error('Server connection test failed:', response.status, response.statusText);
+            return false;
+          }
+        } catch (error) {
+          console.error('Error testing server connection:', error);
+          return false;
+        }
+      }
+      
+      // Fungsi untuk melakukan pengecekan fungsionalitas menyeluruh
+      async function testAllFunctions() {
+        console.log('======= TESTING ALL FUNCTIONALITY =======');
+        
+        // 1. Cek koneksi server
+        const serverConnected = await testServerConnection();
+        console.log('Server connection:', serverConnected ? 'OK' : 'FAILED');
+        
+        // 2. Cek koneksi WebSocket
+        const wsConnected = ws && ws.readyState === WebSocket.OPEN;
+        console.log('WebSocket connection:', wsConnected ? 'OK' : 'FAILED');
+        
+        // 3. Cek DOM elements
+        const domValid = validateDOMElements();
+        console.log('DOM validation:', domValid ? 'OK' : 'FAILED');
+        
+        // 4. Cek tabel data
+        const tableBody = document.getElementById('detectionTableBody');
+        const tablePopulated = tableBody && tableBody.children.length > 0;
+        console.log('Table data:', tablePopulated ? 'OK' : 'EMPTY');
+        
+        // 5. Cek log realtime
+        const logElement = document.getElementById('detectionLog');
+        const logPopulated = logElement && logElement.children.length > 0;
+        console.log('Realtime log:', logPopulated ? 'OK' : 'EMPTY');
+        
+        // 6. Cek tampilan Status Perangkat
+        const deviceInfoElement = document.getElementById('deviceInfo');
+        const deviceInfoPopulated = deviceId && deviceId.textContent !== '-';
+        console.log('Device status:', deviceInfoPopulated ? 'OK' : 'EMPTY');
+        
+        // Jika ada masalah, coba refresh data lagi
+        if (!tablePopulated || !logPopulated || !deviceInfoPopulated) {
+          console.log('Some data is missing, refreshing...');
+          
+          // Refresh device status
+          if (!deviceInfoPopulated && wsConnected) {
+            ws.send(JSON.stringify({
+              type: 'request',
+              request: 'status',
+              timestamp: new Date().toISOString()
+            }));
+            console.log('Status update requested');
+          }
+          
+          // Refresh data table
+          if (!tablePopulated) {
+            loadDetectionData();
+          }
+          
+          // Tambahkan dummy log jika kosong
+          if (!logPopulated) {
+            const testData = {
+              event: 'test',
+              timestamp: new Date().toISOString(),
+              message: 'Test message from diagnostic function'
+            };
+            addDetectionLogEntry(testData);
+            console.log('Test log entry added');
+          }
+        }
+        
+        console.log('======= END OF TESTING =======');
+        return {
+          serverConnected,
+          wsConnected,
+          domValid,
+          tablePopulated,
+          logPopulated,
+          deviceInfoPopulated
+        };
+      }
+      
+      // Tambahkan function untuk handle error yang tidak tertangkap
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global error:', message, 'at', source, lineno, colno, error);
+        return false;
+      };
+      
+      // Fungsi untuk mendapatkan semua DOM element yang dibutuhkan dan validasinya
+      function validateDOMElements() {
+        console.log('Validating DOM elements...');
+        
+        const elements = {
+          // Status elements
+          deviceInfo: document.getElementById('deviceInfo'),
+          detectionLog: document.getElementById('detectionLog'),
+          detectionTableBody: document.getElementById('detectionTableBody'),
+          connectionStatus: document.getElementById('connectionStatus'),
+          
+          // Device status elements
+          deviceId: document.getElementById('deviceId'),
+          deviceMac: document.getElementById('deviceMac'),
+          deviceIp: document.getElementById('deviceIp'),
+          deviceMode: document.getElementById('deviceMode'),
+          sensorStatus: document.getElementById('sensorStatus'),
+          detectionCount: document.getElementById('detectionCount'),
+          deviceUptime: document.getElementById('deviceUptime'),
+          
+          // Modals
+          detailModal: document.getElementById('detailModal'),
+          detailContent: document.getElementById('detailContent'),
+          
+          // Indicators
+          loadingIndicator: document.getElementById('loadingIndicator'),
+          emptyDataMessage: document.getElementById('emptyDataMessage')
+        };
+        
+        // Cek setiap elemen dan log jika ada yang hilang
+        let allValid = true;
+        for (const [key, element] of Object.entries(elements)) {
+          if (!element) {
+            console.error(`DOM element not found: ${key}`);
+            allValid = false;
+          }
+        }
+        
+        if (allValid) {
+          console.log('All required DOM elements found');
+        } else {
+          console.error('Some DOM elements are missing');
+        }
+        
+        return allValid;
+      }
+
+      // Deteksi dark mode dan set class pada body
+      function detectDarkMode() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          console.log('Dark mode detected and applied');
+        } else {
+          document.body.classList.remove('dark');
+          console.log('Light mode detected and applied');
+        }
+      }
+      
+      // Listen for dark mode changes
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', detectDarkMode);
+      }
+      
+      // Apply dark mode on load
+      detectDarkMode();
+      
+      // Retry loading data setiap 10 detik jika data kosong
+      function scheduleDataRefresh() {
+        const detectionTableBody = document.getElementById('detectionTableBody');
+        const detectionLog = document.getElementById('detectionLog');
+        
+        if ((!detectionTableBody || detectionTableBody.children.length === 0) && 
+            (!detectionLog || detectionLog.children.length === 0)) {
+          console.log('No data found, scheduling refresh in 10 seconds');
+          setTimeout(() => {
+            console.log('Auto-refreshing data...');
+            loadDetectionData();
+            scheduleDataRefresh();
+          }, 10000);
+        }
+      }
+      
+      // Jadwalkan refresh data setelah halaman dimuat
+      setTimeout(scheduleDataRefresh, 5000);
+    </script>
+  </body>
+</html>
+
