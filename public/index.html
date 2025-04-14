@@ -99,6 +99,41 @@
         transition: all 0.3s ease;
       }
     </style>
+    
+    <!-- Script autentikasi -->
+    <script>
+      // Periksa token autentikasi
+      document.addEventListener('DOMContentLoaded', () => {
+        // Cek jika token tersedia di localStorage
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          // Redirect ke halaman login jika tidak ada token
+          window.location.href = '/login.html';
+        }
+      });
+
+      // Fungsi logout
+      function logout() {
+        fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Hapus token dan redirect ke halaman login
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Hapus token dan redirect meskipun ada error
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+        });
+      }
+    </script>
   </head>
   <body class="bg-gray-100 dark:bg-gray-900">
     <div class="container mx-auto px-4 py-6">

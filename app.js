@@ -6,9 +6,12 @@ import { dirname } from "path";
 import path from "path";
 import http from "http";
 import { WebSocketServer } from "ws";
+import cookieParser from "cookie-parser";
 import sequelize from "./config/database.js";
 import detectionRoutes from "./routes/detection_route.js";
 import deviceRoutes from "./routes/device_route.js";
+import authRoutes from "./routes/auth_route.js";
+import { authenticatePage } from "./middleware/auth.js";
 
 // Konfigurasi environment
 dotenv.config();
@@ -77,18 +80,28 @@ global.broadcastToClients = broadcastMessage;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Routes
+// Routes API
+app.use("/api/auth", authRoutes);
 app.use("/api/detections", detectionRoutes);
 app.use("/api/devices", deviceRoutes);
 
-// Root route
+// Root API route
 app.get("/api", (req, res) => {
   res.json({
     message: "IoT Detection API Service",
     version: "1.0.0",
     status: "running",
   });
+});
+
+// Middleware autentikasi untuk halaman web
+app.use(authenticatePage);
+
+// Serve halaman login tanpa autentikasi
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // Serve static files
