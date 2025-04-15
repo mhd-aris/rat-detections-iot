@@ -2,7 +2,7 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Analisis Data Deteksi - Heatmap Perimeter</title>
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,16 +13,16 @@
         theme: {
           extend: {
             colors: {
-              primary: '#3b82f6',
-              secondary: '#64748b',
-              success: '#10b981',
-              danger: '#ef4444',
-              warning: '#f59e0b',
-              info: '#06b6d4'
-            }
-          }
-        }
-      }
+              primary: "#3b82f6",
+              secondary: "#64748b",
+              success: "#10b981",
+              danger: "#ef4444",
+              warning: "#f59e0b",
+              info: "#06b6d4",
+            },
+          },
+        },
+      };
     </script>
     <style>
       .perimeter-container {
@@ -34,12 +34,12 @@
         margin: 20px 0;
         background-color: #f8fafc;
       }
-      
+
       .dark .perimeter-container {
         border-color: #374151;
         background-color: #1e293b;
       }
-      
+
       .sensor-point {
         position: absolute;
         width: 32px;
@@ -52,26 +52,26 @@
         color: white;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         z-index: 10;
       }
-      
+
       .sensor-point:hover {
         transform: scale(1.15);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       }
-      
+
       .sensor-line {
         position: absolute;
         background-color: rgba(203, 213, 225, 0.7);
         z-index: 5;
         transform-origin: 0 0;
       }
-      
+
       .dark .sensor-line {
         background-color: rgba(71, 85, 105, 0.7);
       }
-      
+
       .tooltip {
         position: absolute;
         display: none;
@@ -83,7 +83,7 @@
         z-index: 1000;
         max-width: 200px;
       }
-      
+
       .land-area {
         position: absolute;
         top: 10%;
@@ -100,12 +100,12 @@
         color: #374151;
         font-weight: 500;
       }
-      
+
       .dark .land-area {
         background-color: rgba(167, 243, 208, 0.1);
         color: #d1d5db;
       }
-      
+
       /* Scrollbar styling */
       ::-webkit-scrollbar {
         width: 8px;
@@ -122,7 +122,7 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #a1a1a1;
       }
-      
+
       .chart-container {
         height: 300px;
       }
@@ -131,38 +131,67 @@
   <body class="bg-gray-100 dark:bg-gray-900">
     <div class="container mx-auto px-4 py-6">
       <div class="bg-blue-600 text-white p-4 rounded-lg shadow-md mb-6">
-        <h1 class="text-2xl font-bold">Analisis Data Deteksi - Heatmap Perimeter</h1>
-        <p class="mt-1">Visualisasi data deteksi pada pagar keliling lahan (24 titik sensor)</p>
+        <h1 class="text-2xl font-bold">
+          Analisis Data Deteksi - Heatmap Perimeter
+        </h1>
+        <p class="mt-1">
+          Visualisasi data deteksi pada pagar keliling lahan (24 titik sensor)
+        </p>
         <div class="mt-2">
-          <a href="/" class="text-white hover:underline">← Kembali ke Dashboard</a>
+          <a href="/" class="text-white hover:underline"
+            >← Kembali ke Dashboard</a
+          >
         </div>
       </div>
-      
+
       <!-- Filter Section -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Filter Data</h2>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+          Filter Data
+        </h2>
         <div class="flex flex-wrap gap-4">
           <div class="w-full sm:w-auto">
-            <label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Mulai:</label>
-            <input type="date" id="startDate" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
+            <label
+              for="startDate"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Tanggal Mulai:</label
+            >
+            <input
+              type="date"
+              id="startDate"
+              class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            />
           </div>
           <div class="w-full sm:w-auto">
-            <label for="endDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Akhir:</label>
-            <input type="date" id="endDate" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
+            <label
+              for="endDate"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Tanggal Akhir:</label
+            >
+            <input
+              type="date"
+              id="endDate"
+              class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            />
           </div>
           <div class="w-full sm:w-auto self-end">
-            <button id="applyFilter" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors mt-4 sm:mt-0">
+            <button
+              id="applyFilter"
+              class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors mt-4 sm:mt-0"
+            >
               Terapkan Filter
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- Heatmap Section -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Heatmap Deteksi Perimeter Lahan</h2>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+              Heatmap Deteksi Perimeter Lahan
+            </h2>
             <div id="perimeterContainer" class="perimeter-container">
               <div class="land-area">Area Lahan</div>
               <!-- Sensor points will be populated here -->
@@ -174,410 +203,473 @@
             </div>
           </div>
         </div>
-        
+
         <div>
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Ringkasan Deteksi per Sisi Lahan</h2>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+              Ringkasan Deteksi per Sisi Lahan
+            </h2>
             <div class="chart-container">
               <canvas id="sideChart"></canvas>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Activity Timeline -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Aktivitas Deteksi Terbaru</h2>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Waktu</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sensor ID</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Lokasi</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody id="activityTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <!-- Data akan diisi secara dinamis -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
+
       <!-- Summary Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Total Deteksi</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            Total Deteksi
+          </h3>
           <p id="totalDetections" class="text-3xl font-bold text-blue-600">0</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Dalam periode yang dipilih</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Dalam periode yang dipilih
+          </p>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Titik Tersibuk</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            Titik Tersibuk
+          </h3>
           <p id="busiestPoint" class="text-3xl font-bold text-amber-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Titik dengan deteksi tertinggi</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Titik dengan deteksi tertinggi
+          </p>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Sisi Tersibuk</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            Sisi Tersibuk
+          </h3>
           <p id="busiestSide" class="text-3xl font-bold text-green-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sisi dengan aktivitas tertinggi</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Sisi dengan aktivitas tertinggi
+          </p>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Waktu Tersibuk</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            Waktu Tersibuk
+          </h3>
           <p id="busiestTime" class="text-3xl font-bold text-red-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Periode dengan deteksi tertinggi</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Periode dengan deteksi tertinggi
+          </p>
         </div>
       </div>
     </div>
-    
+
+    <!-- Activity Timeline -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+        Aktivitas Deteksi Terbaru
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Waktu
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Sensor ID
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Lokasi
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id="activityTableBody"
+            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+          >
+            <!-- Data akan diisi secara dinamis -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <script>
       // Variabel global
       let sideColors = {
-        'Utara': '#3b82f6', // blue
-        'Timur': '#ef4444', // red
-        'Selatan': '#10b981', // green
-        'Barat': '#f59e0b' // amber
+        Utara: "#3b82f6", // blue
+        Timur: "#ef4444", // red
+        Selatan: "#10b981", // green
+        Barat: "#f59e0b", // amber
       };
       let sideChart;
       let sensorData = {};
       let mockDetections = [];
-      
+
       // Inisialisasi sensor points dan chart
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener("DOMContentLoaded", function () {
         initPerimeterSensors();
         generateMockData();
         loadData();
-        
+
         // Setup event listeners
-        document.getElementById('applyFilter').addEventListener('click', loadData);
+        document
+          .getElementById("applyFilter")
+          .addEventListener("click", loadData);
       });
-      
+
       // Inisialisasi titik sensor di perimeter
       function initPerimeterSensors() {
-        const container = document.getElementById('perimeterContainer');
+        const container = document.getElementById("perimeterContainer");
         const containerWidth = container.offsetWidth;
         const containerHeight = container.offsetHeight;
-        
+
         // Hapus sensor points yang ada (jika ada)
-        const existingSensors = container.querySelectorAll('.sensor-point, .sensor-line');
-        existingSensors.forEach(element => element.remove());
-        
+        const existingSensors = container.querySelectorAll(
+          ".sensor-point, .sensor-line"
+        );
+        existingSensors.forEach((element) => element.remove());
+
         // Hitung jumlah sensor di setiap sisi
         // Total 24 titik: 6 di setiap sisi
         const pointsPerSide = 6;
         const totalPoints = pointsPerSide * 4;
-        
+
         // Tentukan padding dari tepi
         const paddingX = containerWidth * 0.05;
         const paddingY = containerHeight * 0.05;
-        const useableWidth = containerWidth - (paddingX * 2);
-        const useableHeight = containerHeight - (paddingY * 2);
-        
+        const useableWidth = containerWidth - paddingX * 2;
+        const useableHeight = containerHeight - paddingY * 2;
+
         // Jarak antar titik di setiap sisi
         const horizontalSpacing = useableWidth / (pointsPerSide - 1);
         const verticalSpacing = useableHeight / (pointsPerSide - 1);
-        
+
         // Buat titik sensor
         let sensorPoints = [];
-        
+
         // Function untuk menambahkan titik sensor
         function addSensorPoint(x, y, id, side) {
-          const point = document.createElement('div');
-          point.className = 'sensor-point';
+          const point = document.createElement("div");
+          point.className = "sensor-point";
           point.style.left = `${x}px`;
           point.style.top = `${y}px`;
-          point.style.backgroundColor = '#9ca3af'; // Warna default abu-abu
+          point.style.backgroundColor = "#9ca3af"; // Warna default abu-abu
           point.dataset.id = id;
           point.dataset.side = side;
           point.textContent = id;
-          
+
           // Event listeners untuk tooltip
-          point.addEventListener('mouseover', showTooltip);
-          point.addEventListener('mousemove', moveTooltip);
-          point.addEventListener('mouseout', hideTooltip);
-          
+          point.addEventListener("mouseover", showTooltip);
+          point.addEventListener("mousemove", moveTooltip);
+          point.addEventListener("mouseout", hideTooltip);
+
           container.appendChild(point);
           sensorPoints.push({
             element: point,
             x: x,
             y: y,
             id: id,
-            side: side
+            side: side,
           });
         }
-        
+
         // Buat titik sensor di perimeter
         // Sisi atas (Utara)
         for (let i = 0; i < pointsPerSide; i++) {
-          const x = paddingX + (i * horizontalSpacing);
+          const x = paddingX + i * horizontalSpacing;
           const y = paddingY;
-          addSensorPoint(x, y, i + 1, 'Utara');
+          addSensorPoint(x, y, i + 1, "Utara");
         }
-        
+
         // Sisi kanan (Timur)
         for (let i = 0; i < pointsPerSide; i++) {
           const x = containerWidth - paddingX;
-          const y = paddingY + (i * verticalSpacing);
-          addSensorPoint(x, y, i + 7, 'Timur');
+          const y = paddingY + i * verticalSpacing;
+          addSensorPoint(x, y, i + 7, "Timur");
         }
-        
+
         // Sisi bawah (Selatan) - reverse direction for consistent numbering around perimeter
         for (let i = 0; i < pointsPerSide; i++) {
-          const x = containerWidth - paddingX - (i * horizontalSpacing);
+          const x = containerWidth - paddingX - i * horizontalSpacing;
           const y = containerHeight - paddingY;
-          addSensorPoint(x, y, i + 13, 'Selatan');
+          addSensorPoint(x, y, i + 13, "Selatan");
         }
-        
+
         // Sisi kiri (Barat) - reverse direction for consistent numbering around perimeter
         for (let i = 0; i < pointsPerSide; i++) {
           const x = paddingX;
-          const y = containerHeight - paddingY - (i * verticalSpacing);
-          addSensorPoint(x, y, i + 19, 'Barat');
+          const y = containerHeight - paddingY - i * verticalSpacing;
+          addSensorPoint(x, y, i + 19, "Barat");
         }
-        
+
         // Tambahkan garis penghubung antar sensor
         for (let i = 0; i < sensorPoints.length; i++) {
           const current = sensorPoints[i];
           const next = sensorPoints[(i + 1) % sensorPoints.length];
-          
-          const line = document.createElement('div');
-          line.className = 'sensor-line';
-          
+
+          const line = document.createElement("div");
+          line.className = "sensor-line";
+
           // Hitung panjang dan sudut rotasi garis
           const dx = next.x - current.x;
           const dy = next.y - current.y;
           const length = Math.sqrt(dx * dx + dy * dy);
           const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-          
+
           // Atur posisi dan transformasi garis
           line.style.left = `${current.x}px`;
           line.style.top = `${current.y}px`;
           line.style.width = `${length}px`;
-          line.style.height = '2px';
+          line.style.height = "2px";
           line.style.transform = `rotate(${angle}deg)`;
-          
+
           container.appendChild(line);
         }
       }
-      
+
       // Generate mock data for demo purposes
       function generateMockData() {
         mockDetections = [];
-        
+
         // Define time range (last 7 days)
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(endDate.getDate() - 7);
-        
+
         // Generate random detections
         const numDetections = 200 + Math.floor(Math.random() * 300); // Between 200-500 detections
-        
+
         for (let i = 0; i < numDetections; i++) {
           // Random sensor ID (1-24)
           const sensorId = Math.floor(Math.random() * 24) + 1;
-          
+
           // Determine side based on sensor ID
           let side;
-          if (sensorId <= 6) side = 'Utara';
-          else if (sensorId <= 12) side = 'Timur';
-          else if (sensorId <= 18) side = 'Selatan';
-          else side = 'Barat';
-          
+          if (sensorId <= 6) side = "Utara";
+          else if (sensorId <= 12) side = "Timur";
+          else if (sensorId <= 18) side = "Selatan";
+          else side = "Barat";
+
           // Random timestamp within range
-          const detectionTime = new Date(startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime()));
-          
+          const detectionTime = new Date(
+            startDate.getTime() +
+              Math.random() * (endDate.getTime() - startDate.getTime())
+          );
+
           // Create detection object
           mockDetections.push({
             id: `det-${i}`,
             sensorId: sensorId,
             side: side,
             detectionTime: detectionTime.toISOString(),
-            status: Math.random() > 0.2 ? 'Terdeteksi' : 'Peringatan'
+            status: Math.random() > 0.2 ? "Terdeteksi" : "Peringatan",
           });
         }
       }
-      
+
       // Tampilkan tooltip saat hover pada sensor
       function showTooltip(e) {
         const sensor = e.currentTarget;
         const sensorId = sensor.dataset.id;
         const side = sensor.dataset.side;
         const detections = sensorData[sensorId] || 0;
-        
-        const tooltip = document.getElementById('tooltip');
+
+        const tooltip = document.getElementById("tooltip");
         tooltip.innerHTML = `
           <div class="font-bold">Sensor ${sensorId}</div>
           <div>Sisi: ${side}</div>
           <div>Jumlah deteksi: ${detections}</div>
         `;
-        tooltip.style.display = 'block';
+        tooltip.style.display = "block";
         moveTooltip(e);
       }
-      
+
       // Pindahkan tooltip mengikuti kursor
       function moveTooltip(e) {
-        const tooltip = document.getElementById('tooltip');
-        tooltip.style.left = (e.pageX + 10) + 'px';
-        tooltip.style.top = (e.pageY + 10) + 'px';
+        const tooltip = document.getElementById("tooltip");
+        tooltip.style.left = e.pageX + 10 + "px";
+        tooltip.style.top = e.pageY + 10 + "px";
       }
-      
+
       // Sembunyikan tooltip
       function hideTooltip() {
-        const tooltip = document.getElementById('tooltip');
-        tooltip.style.display = 'none';
+        const tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "none";
       }
-      
+
       // Load data (in real implementation, fetch from API)
       async function loadData() {
         try {
           // Get filter values
-          const startDate = document.getElementById('startDate').value;
-          const endDate = document.getElementById('endDate').value;
-          
+          const startDate = document.getElementById("startDate").value;
+          const endDate = document.getElementById("endDate").value;
+
           // In a real implementation, fetch from API
           // For demo, we'll filter our mock data
           let filteredDetections = [...mockDetections];
-          
+
           if (startDate) {
             const startDateObj = new Date(startDate);
             filteredDetections = filteredDetections.filter(
-              d => new Date(d.detectionTime) >= startDateObj
+              (d) => new Date(d.detectionTime) >= startDateObj
             );
           }
-          
+
           if (endDate) {
             const endDateObj = new Date(endDate);
             // Add 1 day to include the full end date
             endDateObj.setDate(endDateObj.getDate() + 1);
             filteredDetections = filteredDetections.filter(
-              d => new Date(d.detectionTime) < endDateObj
+              (d) => new Date(d.detectionTime) < endDateObj
             );
           }
-          
+
           // Update sensor points heatmap
           updateSensorHeatmap(filteredDetections);
-          
+
           // Update chart with zone data
           updateSideChart(filteredDetections);
-          
+
           // Update activity table
           updateActivityTable(filteredDetections);
-          
+
           // Update summary stats
           updateSummaryStats(filteredDetections);
-          
         } catch (error) {
-          console.error('Error loading data:', error);
-          alert('Gagal memuat data deteksi. Mohon coba lagi.');
+          console.error("Error loading data:", error);
+          alert("Gagal memuat data deteksi. Mohon coba lagi.");
         }
       }
-      
+
       // Update sensor points heatmap with detection data
       function updateSensorHeatmap(detections) {
         // Reset sensor data
         sensorData = {};
-        
+
         // Count detections per sensor
-        detections.forEach(detection => {
+        detections.forEach((detection) => {
           const sensorId = detection.sensorId.toString();
           if (!sensorData[sensorId]) {
             sensorData[sensorId] = 0;
           }
           sensorData[sensorId]++;
         });
-        
+
         // Find maximum value for color normalization
         const maxValue = Math.max(1, ...Object.values(sensorData));
-        
+
         // Update each sensor point
-        const sensorPoints = document.querySelectorAll('.sensor-point');
-        sensorPoints.forEach(point => {
+        const sensorPoints = document.querySelectorAll(".sensor-point");
+        sensorPoints.forEach((point) => {
           const sensorId = point.dataset.id;
           const side = point.dataset.side;
           const detectionCount = sensorData[sensorId] || 0;
-          
+
           // Color intensity based on detection count
           const intensity = detectionCount / maxValue;
-          
+
           if (detectionCount > 0) {
             // Base color by side with intensity
             let baseColor;
-            switch(side) {
-              case 'Utara':
+            switch (side) {
+              case "Utara":
                 // Blue with intensity
-                point.style.backgroundColor = `rgba(59, 130, 246, ${Math.min(0.3 + intensity * 0.7, 1)})`;
+                point.style.backgroundColor = `rgba(59, 130, 246, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
                 break;
-              case 'Timur':
+              case "Timur":
                 // Red with intensity
-                point.style.backgroundColor = `rgba(239, 68, 68, ${Math.min(0.3 + intensity * 0.7, 1)})`;
+                point.style.backgroundColor = `rgba(239, 68, 68, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
                 break;
-              case 'Selatan':
+              case "Selatan":
                 // Green with intensity
-                point.style.backgroundColor = `rgba(16, 185, 129, ${Math.min(0.3 + intensity * 0.7, 1)})`;
+                point.style.backgroundColor = `rgba(16, 185, 129, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
                 break;
-              case 'Barat':
+              case "Barat":
                 // Amber with intensity
-                point.style.backgroundColor = `rgba(245, 158, 11, ${Math.min(0.3 + intensity * 0.7, 1)})`;
+                point.style.backgroundColor = `rgba(245, 158, 11, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
                 break;
               default:
-                point.style.backgroundColor = '#9ca3af';
+                point.style.backgroundColor = "#9ca3af";
             }
-            
+
             // Increase size based on intensity
-            const scale = 1 + (intensity * 0.5);
+            const scale = 1 + intensity * 0.5;
             point.style.transform = `scale(${scale})`;
             point.style.zIndex = Math.floor(10 + intensity * 10);
           } else {
             // Reset for sensors with no detections
-            point.style.backgroundColor = '#9ca3af';
-            point.style.transform = 'scale(1)';
-            point.style.zIndex = '10';
+            point.style.backgroundColor = "#9ca3af";
+            point.style.transform = "scale(1)";
+            point.style.zIndex = "10";
           }
         });
       }
-      
+
       // Update chart for side data
       function updateSideChart(detections) {
         // Process data by side
         const sideData = {
-          'Utara': 0,
-          'Timur': 0,
-          'Selatan': 0,
-          'Barat': 0
+          Utara: 0,
+          Timur: 0,
+          Selatan: 0,
+          Barat: 0,
         };
-        
-        detections.forEach(detection => {
+
+        detections.forEach((detection) => {
           const side = detection.side;
           if (side in sideData) {
             sideData[side]++;
           }
         });
-        
+
         // Prepare chart data
         const labels = Object.keys(sideData);
-        const data = labels.map(side => sideData[side]);
-        const backgroundColor = labels.map(side => sideColors[side]);
-        
+        const data = labels.map((side) => sideData[side]);
+        const backgroundColor = labels.map((side) => sideColors[side]);
+
         // Create or update chart
-        const ctx = document.getElementById('sideChart').getContext('2d');
-        
+        const ctx = document.getElementById("sideChart").getContext("2d");
+
         if (sideChart) {
           sideChart.data.datasets[0].data = data;
           sideChart.update();
         } else {
           sideChart = new Chart(ctx, {
-            type: 'bar',
+            type: "bar",
             data: {
               labels: labels,
-              datasets: [{
-                label: 'Jumlah Deteksi',
-                data: data,
-                backgroundColor: backgroundColor,
-                borderWidth: 1
-              }]
+              datasets: [
+                {
+                  label: "Jumlah Deteksi",
+                  data: data,
+                  backgroundColor: backgroundColor,
+                  borderWidth: 1,
+                },
+              ],
             },
             options: {
               responsive: true,
@@ -586,165 +678,184 @@
                 y: {
                   beginAtZero: true,
                   ticks: {
-                    precision: 0
-                  }
-                }
+                    precision: 0,
+                  },
+                },
               },
               plugins: {
                 legend: {
-                  display: false
-                }
-              }
-            }
+                  display: false,
+                },
+              },
+            },
           });
         }
       }
-      
+
       // Update activity table with latest detections
       function updateActivityTable(detections) {
-        const tableBody = document.getElementById('activityTableBody');
-        tableBody.innerHTML = '';
-        
+        const tableBody = document.getElementById("activityTableBody");
+        tableBody.innerHTML = "";
+
         // Sort by detection time, newest first
-        const sortedDetections = [...detections].sort((a, b) => 
-          new Date(b.detectionTime) - new Date(a.detectionTime)
+        const sortedDetections = [...detections].sort(
+          (a, b) => new Date(b.detectionTime) - new Date(a.detectionTime)
         );
-        
+
         // Take only the 10 most recent
         const recentDetections = sortedDetections.slice(0, 10);
-        
-        recentDetections.forEach(detection => {
-          const row = document.createElement('tr');
-          
+
+        recentDetections.forEach((detection) => {
+          const row = document.createElement("tr");
+
           // Format detection time
           const detectionTime = new Date(detection.detectionTime);
-          const formattedTime = detectionTime.toLocaleDateString('id-ID') + ' ' + 
-                                detectionTime.toLocaleTimeString('id-ID');
-          
+          const formattedTime =
+            detectionTime.toLocaleDateString("id-ID") +
+            " " +
+            detectionTime.toLocaleTimeString("id-ID");
+
           // Create table row
           row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formattedTime}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Sensor-${detection.sensorId}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Sensor-${
+              detection.sensorId
+            }</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSideBadgeClass(detection.side)}">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSideBadgeClass(
+                detection.side
+              )}">
                 ${detection.side}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(detection.status)}">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                detection.status
+              )}">
                 ${detection.status}
               </span>
             </td>
           `;
-          
+
           tableBody.appendChild(row);
         });
       }
-      
+
       // Get badge styling class based on side
       function getSideBadgeClass(side) {
-        switch(side) {
-          case 'Utara': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-          case 'Timur': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-          case 'Selatan': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-          case 'Barat': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300';
-          default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        switch (side) {
+          case "Utara":
+            return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+          case "Timur":
+            return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+          case "Selatan":
+            return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+          case "Barat":
+            return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300";
+          default:
+            return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
         }
       }
-      
+
       // Get badge styling class based on status
       function getStatusBadgeClass(status) {
-        switch(status) {
-          case 'Terdeteksi': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-          case 'Peringatan': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-          default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        switch (status) {
+          case "Terdeteksi":
+            return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+          case "Peringatan":
+            return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+          default:
+            return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
         }
       }
-      
+
       // Update summary statistics
       function updateSummaryStats(detections) {
         // Total detections
-        document.getElementById('totalDetections').textContent = detections.length;
-        
+        document.getElementById("totalDetections").textContent =
+          detections.length;
+
         // Busiest point
         const pointCounts = {};
-        detections.forEach(d => {
+        detections.forEach((d) => {
           if (!pointCounts[d.sensorId]) pointCounts[d.sensorId] = 0;
           pointCounts[d.sensorId]++;
         });
-        
-        let busiestPoint = '-';
+
+        let busiestPoint = "-";
         let maxPointCount = 0;
-        
+
         for (const [point, count] of Object.entries(pointCounts)) {
           if (count > maxPointCount) {
             maxPointCount = count;
             busiestPoint = point;
           }
-
         }
-        
-        document.getElementById('busiestPoint').textContent = busiestPoint ? `Sensor-${busiestPoint}` : '-';
-        
+
+        document.getElementById("busiestPoint").textContent = busiestPoint
+          ? `Sensor-${busiestPoint}`
+          : "-";
+
         // Busiest side
         const sideCounts = {
-          'Utara': 0,
-          'Timur': 0,
-          'Selatan': 0,
-          'Barat': 0
+          Utara: 0,
+          Timur: 0,
+          Selatan: 0,
+          Barat: 0,
         };
-        
-        detections.forEach(d => {
+
+        detections.forEach((d) => {
           if (d.side in sideCounts) {
             sideCounts[d.side]++;
           }
         });
-        
-        let busiestSide = '-';
+
+        let busiestSide = "-";
         let maxSideCount = 0;
-        
+
         for (const [side, count] of Object.entries(sideCounts)) {
           if (count > maxSideCount) {
             maxSideCount = count;
             busiestSide = side;
           }
         }
-        
-        document.getElementById('busiestSide').textContent = busiestSide;
-        
+
+        document.getElementById("busiestSide").textContent = busiestSide;
+
         // Busiest time (hour of day)
         const hourCounts = Array(24).fill(0);
-        detections.forEach(d => {
+        detections.forEach((d) => {
           const hour = new Date(d.detectionTime).getHours();
           hourCounts[hour]++;
         });
-        
+
         let busiestHour = 0;
         let maxHourCount = 0;
-        
+
         hourCounts.forEach((count, hour) => {
           if (count > maxHourCount) {
             maxHourCount = count;
             busiestHour = hour;
           }
         });
-        
+
         // Format hour range (busiest hour to busiest hour + 1)
         const hourTo = (busiestHour + 1) % 24;
-        document.getElementById('busiestTime').textContent = 
-          `${busiestHour.toString().padStart(2, '0')}:00 - ${hourTo.toString().padStart(2, '0')}:00`;
+        document.getElementById("busiestTime").textContent = `${busiestHour
+          .toString()
+          .padStart(2, "0")}:00 - ${hourTo.toString().padStart(2, "0")}:00`;
       }
-      
+
       // Set default dates (last 7 days)
       function setDefaultDates() {
         const today = new Date();
         const lastWeek = new Date();
         lastWeek.setDate(today.getDate() - 7);
-        
-        document.getElementById('startDate').valueAsDate = lastWeek;
-        document.getElementById('endDate').valueAsDate = today;
+
+        document.getElementById("startDate").valueAsDate = lastWeek;
+        document.getElementById("endDate").valueAsDate = today;
       }
-      
+
       // Initialize with default dates
       setDefaultDates();
     </script>
