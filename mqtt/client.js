@@ -142,9 +142,9 @@ async function handleTelemetryMessage(payload) {
   try {
     console.log("Telemetry data:", payload);
 
-    // Generate zona acak 1-16 jika tidak ada
+    // Generate zona acak 1-80 jika tidak ada
     if (!payload.zone) {
-      const randomZone = Math.floor(Math.random() * 16) + 1;
+      const randomZone = Math.floor(Math.random() * 80) + 1;
       payload.zone = randomZone.toString();
     }
 
