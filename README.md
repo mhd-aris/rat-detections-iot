@@ -1,4 +1,7 @@
 # IoT Rat Detection System
+![Screenshot 2025-04-19 at 23 28 03](https://github.com/user-attachments/assets/81f5e17d-9fec-4c28-a96c-8888dcb9fc4b)
+![Screenshot 2025-04-19 at 23 28 34](https://github.com/user-attachments/assets/77380a7f-a64b-4a77-be76-9ea1a58e0ba0)
+
 
 A comprehensive IoT backend system for monitoring and controlling rat detection devices. This system receives, processes, and visualizes data from IoT sensors that detect rat activity in predefined zones.
 
