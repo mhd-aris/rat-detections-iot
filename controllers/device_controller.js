@@ -85,9 +85,9 @@ export const configureDevice = async (req, res) => {
     }
     
     if (config.buzzer_pattern !== undefined && 
-        !['ultrasonic', 'varying', 'aggressive'].includes(config.buzzer_pattern)) {
+        !['default','ultrasonic', 'varying', 'aggressive'].includes(config.buzzer_pattern)) {
       return res.status(400).json({ 
-        message: 'Parameter buzzer_pattern harus bernilai ultrasonic, varying atau aggresive' 
+        message: 'Parameter buzzer_pattern harus bernilai default, ultrasonic, varying atau aggresive' 
       });
     }
     

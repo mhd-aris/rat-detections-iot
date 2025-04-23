@@ -216,92 +216,114 @@
         </div>
       </div>
 
-      <!-- Summary Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            Total Deteksi
-          </h3>
-          <p id="totalDetections" class="text-3xl font-bold text-blue-600">0</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Dalam periode yang dipilih
-          </p>
-        </div>
+      <!-- Statistik Ringkasan Card -->
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+          Ringkasan Statistik
+        </h2>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            Titik Tersibuk
-          </h3>
-          <p id="busiestPoint" class="text-3xl font-bold text-amber-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Titik dengan deteksi tertinggi
-          </p>
-        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Card 1 -->
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-5">
+            <h3
+              class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+            >
+              Total Deteksi
+            </h3>
+            <p id="totalDetections" class="text-3xl font-bold text-blue-600">
+              0
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Dalam periode yang dipilih
+            </p>
+          </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            Sisi Tersibuk
-          </h3>
-          <p id="busiestSide" class="text-3xl font-bold text-green-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Sisi dengan aktivitas tertinggi
-          </p>
-        </div>
+          <!-- Card 2 -->
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-5">
+            <h3
+              class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+            >
+              Titik Tersibuk
+            </h3>
+            <p id="busiestPoint" class="text-3xl font-bold text-amber-500">-</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Titik dengan deteksi tertinggi
+            </p>
+          </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            Waktu Tersibuk
-          </h3>
-          <p id="busiestTime" class="text-3xl font-bold text-red-500">-</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Periode dengan deteksi tertinggi
-          </p>
+          <!-- Card 3 -->
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-5">
+            <h3
+              class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+            >
+              Sisi Tersibuk
+            </h3>
+            <p id="busiestSide" class="text-3xl font-bold text-green-500">-</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Sisi dengan aktivitas tertinggi
+            </p>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-5">
+            <h3
+              class="text-lg font-semibold text-gray-800 dark:text-white mb-2"
+            >
+              Waktu Tersibuk
+            </h3>
+            <p id="busiestTime" class="text-3xl font-bold text-red-500">-</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Periode dengan deteksi tertinggi
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Activity Timeline -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-      <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
-        Aktivitas Deteksi Terbaru
-      </h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Waktu
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Sensor ID
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Lokasi
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            id="activityTableBody"
-            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+      <!-- Activity Timeline -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+          Aktivitas Deteksi Terbaru
+        </h2>
+        <div class="overflow-x-auto">
+          <table
+            class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
           >
-            <!-- Data akan diisi secara dinamis -->
-          </tbody>
-        </table>
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Waktu
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Sensor ID
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Lokasi
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              id="activityTableBody"
+              class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+            >
+              <!-- Data akan diisi secara dinamis -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 

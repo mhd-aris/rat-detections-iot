@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Antrian dengan Pengumuman Suara</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+        }
+        .display {
+            text-align: center;
+            background: #263238;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .current-number {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .queue-info {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .counter-section {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .counter {
+            flex: 1;
+            text-align: center;
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 120px;
+        }
+        .counter h3 {
+            margin-top: 0;
+        }
+        .counter-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.reset {
+            background: #f44336;
+        }
+        button.reset:hover {
+            background: #d32f2f;
+        }
+        .control-panel {
+            margin-top: 20px;
+        }
+        .history {
+            height: 300px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .settings {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <div class="display">
+                <h2>NOMOR ANTRIAN SAAT INI</h2>
+                <div class="current-number" id="currentNumber">000</div>
+                <div class="queue-info">
+                    Total antrian: <span id="totalQueue">0</span> | 
+                    Menunggu: <span id="waitingCount">0</span>
+                </div>
+            </div>
+            
+            <div class="counter-section">
+                <div class="counter">
+                    <h3>Loket 1</h3>
+                    <div class="counter-number" id="counter1">---</div>
+                    <button onclick="callNext(1)">PANGGIL</button>
+                </div>
+                <div class="counter">
+                    <h3>Loket 2</h3>
+                    <div class="counter-number" id="counter2">---</div>
+                    <button onclick="callNext(2)">PANGGIL</button>
+                </div>
+                <div class="counter">
+                    <h3>Loket 3</h3>
+                    <div class="counter-number" id="counter3">---</div>
+                    <button onclick="callNext(3)">PANGGIL</button>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                <button onclick="generateNewTicket()">AMBIL NOMOR ANTRIAN BARU</button>
+                <button class="reset" onclick="resetQueue()">RESET SISTEM</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Riwayat Panggilan</h2>
+            <div class="history" id="callHistory">
+                <!-- History items will be added here -->
+            </div>
+            
+            <div class="settings">
+                <h3>Pengaturan Suara</h3>
+                <div class="form-group">
+                    <label for="voiceSelector">Pilih Suara:</label>
+                    <select id="voiceSelector"></select>
+                </div>
+                <div class="form-group">
+                    <label for="volumeControl">Volume:</label>
+                    <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+                </div>
+                <div class="form-group">
+                    <label for="speedControl">Kecepatan Bicara:</label>
+                    <input type="range" id="speedControl" min="0.5" max="2" step="0.1" value="1">
+                </div>
+                <div class="form-group">
+                    <label for="announcementTemplate">Template Pengumuman:</label>
+                    <input type="text" id="announcementTemplate" value="Nomor antrian {number}, silakan menuju ke loket {counter}">
+                </div>
+                <button onclick="testVoice()">TEST SUARA</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQueueNumber = 0;
+        let waitingQueue = [];
+        let counterStatus = {
+            1: { current: null, busy: false },
+            2: { current: null, busy: false },
+            3: { current: null, busy: false }
+        };
+        
+        // Web Speech API
+        let synth = window.speechSynthesis;
+        let voices = [];
+        let selectedVoice = null;
+        
+        // Initialize
+        window.onload = function() {
+            loadVoices();
+            updateDisplay();
+            
+            // Try loading voices again after a delay if none were found initially
+            if (voices.length === 0) {
+                setTimeout(loadVoices, 1000);
+            }
+            
+            // Load any saved state from localStorage
+            loadState();
+        };
+        
+        function loadVoices() {
+            voices = synth.getVoices();
+            const voiceSelector = document.getElementById('voiceSelector');
+            voiceSelector.innerHTML = '';
+            
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelector.appendChild(option);
+                
+                // Try to select an Indonesian voice if available
+                if (voice.lang.includes('id-ID')) {
+                    voiceSelector.value = index;
+                    selectedVoice = voice;
+                }
+            });
+            
+            // Default to first voice if no Indonesian voice found
+            if (!selectedVoice && voices.length > 0) {
+                selectedVoice = voices[0];
+            }
+            
+            voiceSelector.addEventListener('change', function() {
+                selectedVoice = voices[this.value];
+            });
+        }
+        
+        function generateNewTicket() {
+            currentQueueNumber++;
+            waitingQueue.push(currentQueueNumber);
+            
+            // Format queue number to 3 digits
+            const formattedNumber = currentQueueNumber.toString().padStart(3, '0');
+            
+            // Announce new ticket
+            speak(`Nomor antrian ${formattedNumber} telah dicetak`);
+            
+            // Add to history
+            addToHistory(`Nomor antrian ${formattedNumber} dicetak`);
+            
+            // Update display
+            updateDisplay();
+            
+            // Save state
+            saveState();
+        }
+        
+        function callNext(counterNumber) {
+            if (waitingQueue.length === 0) {
+                alert('Tidak ada antrian yang menunggu');
+                return;
+            }
+            
+            // Mark counter as busy
+            counterStatus[counterNumber].busy = true;
+            
+            // Get next queue number
+            const nextNumber = waitingQueue.shift();
+            counterStatus[counterNumber].current = nextNumber;
+            
+            // Format the number to 3 digits
+            const formattedNumber = nextNumber.toString().padStart(3, '0');
+            
+            // Update counter display
+            document.getElementById(`counter${counterNumber}`).textContent = formattedNumber;
+            
+            // Update main display if this is the latest call
+            document.getElementById('currentNumber').textContent = formattedNumber;
+            
+            // Announce the queue number
+            const template = document.getElementById('announcementTemplate').value;
+            const announcement = template
+                .replace('{number}', formattedNumber)
+                .replace('{counter}', counterNumber);
+            
+            speak(announcement);
+            
+            // Add to history
+            addToHistory(`Nomor ${formattedNumber} dipanggil ke loket ${counterNumber}`);
+            
+            // Update display
+            updateDisplay();
+            
+            // Save state
+            saveState();
+            
+            // Simulate service time (counter becomes available again after a delay)
+            setTimeout(() => {
+                counterStatus[counterNumber].busy = false;
+            }, 10000); // 10 seconds delay
+        }
+        
+        function speak(text) {
+            // Cancel any ongoing speech
+            synth.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Set voice
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+            
+            // Set volume and rate
+            utterance.volume = parseFloat(document.getElementById('volumeControl').value);
+            utterance.rate = parseFloat(document.getElementById('speedControl').value);
+            
+            synth.speak(utterance);
+        }
+        
+        function testVoice() {
+            const template = document.getElementById('announcementTemplate').value;
+            const testAnnouncement = template
+                .replace('{number}', '123')
+                .replace('{counter}', '2');
+            
+            speak(testAnnouncement);
+        }
+        
+        function addToHistory(text) {
+            const history = document.getElementById('callHistory');
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            item.textContent = `[${timeString}] ${text}`;
+            
+            // Add to the top of the history
+            history.insertBefore(item, history.firstChild);
+        }
+        
+        function updateDisplay() {
+            document.getElementById('totalQueue').textContent = currentQueueNumber;
+            document.getElementById('waitingCount').textContent = waitingQueue.length;
+        }
+        
+        function resetQueue() {
+            if (confirm('Apakah Anda yakin ingin mereset sistem antrian?')) {
+                currentQueueNumber = 0;
+                waitingQueue = [];
+                
+                // Reset counters
+                for (let i = 1; i <= 3; i++) {
+                    counterStatus[i] = { current: null, busy: false };
+                    document.getElementById(`counter${i}`).textContent = '---';
+                }
+                
+                document.getElementById('currentNumber').textContent = '000';
+                document.getElementById('callHistory').innerHTML = '';
+                
+                updateDisplay();
+                saveState();
+                
+                speak('Sistem antrian telah direset');
+            }
+        }
+        
+        function saveState() {
+            const state = {
+                currentQueueNumber,
+                waitingQueue,
+                counterStatus
+            };
+            
+            localStorage.setItem('queueSystemState', JSON.stringify(state));
+        }
+        
+        function loadState() {
+            const savedState = localStorage.getItem('queueSystemState');
+            
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                
+                currentQueueNumber = state.currentQueueNumber;
+                waitingQueue = state.waitingQueue;
+                counterStatus = state.counterStatus;
+                
+                // Update UI
+                updateDisplay();
+                
+                // Update counter displays
+                for (let i = 1; i <= 3; i++) {
+                    if (counterStatus[i].current) {
+                        document.getElementById(`counter${i}`).textContent = 
+                            counterStatus[i].current.toString().padStart(3, '0');
+                    }
+                }
+                
+                // Update main display if there's an active counter
+                for (let i = 1; i <= 3; i++) {
+                    if (counterStatus[i].current) {
+                        document.getElementById('currentNumber').textContent = 
+                            counterStatus[i].current.toString().padStart(3, '0');
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Speech synthesis voice changed event
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+    </script>
+</body>
+</html>
