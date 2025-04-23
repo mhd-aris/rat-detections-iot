@@ -532,46 +532,81 @@
       }
 
       // Load data (in real implementation, fetch from API)
+
+      // Load data from API
       async function loadData() {
         try {
           // Get filter values
           const startDate = document.getElementById("startDate").value;
           const endDate = document.getElementById("endDate").value;
 
-          // In a real implementation, fetch from API
-          // For demo, we'll filter our mock data
-          let filteredDetections = [...mockDetections];
+          // Construct API URL with query parameters if dates are provided
+          let apiUrl = "/api/detections";
+          const params = new URLSearchParams();
 
           if (startDate) {
-            const startDateObj = new Date(startDate);
-            filteredDetections = filteredDetections.filter(
-              (d) => new Date(d.detectionTime) >= startDateObj
-            );
+            params.append("startDate", new Date(startDate).toISOString());
           }
 
           if (endDate) {
+            // Add one day to include the full end date
             const endDateObj = new Date(endDate);
-            // Add 1 day to include the full end date
             endDateObj.setDate(endDateObj.getDate() + 1);
-            filteredDetections = filteredDetections.filter(
-              (d) => new Date(d.detectionTime) < endDateObj
-            );
+            params.append("endDate", endDateObj.toISOString());
           }
 
+          if (params.toString()) {
+            apiUrl += "?" + params.toString();
+          }
+
+          // Fetch data from API
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+
+          const detections = await response.json();
+
+          // Process the API data to match our expected format
+          const processedDetections = detections.map((detection) => {
+            // Determine side based on zone number
+            const zone = parseInt(detection.zone);
+            let side;
+
+            // Map zones to sides of the perimeter
+            // Zone mapping logic - adjust these ranges based on your actual zone numbering
+            if (zone >= 1 && zone <= 6) side = "Utara";
+            else if (zone >= 7 && zone <= 12) side = "Timur";
+            else if (zone >= 13 && zone <= 18) side = "Selatan";
+            else side = "Barat";
+
+            return {
+              id: detection.id,
+              sensorId: parseInt(detection.zone), // Use zone as sensor ID
+              side: side,
+              detectionTime: detection.detectionTime,
+              status:
+                detection.status === "motion_detected"
+                  ? "Terdeteksi"
+                  : "Peringatan",
+              originalData: detection, // Keep original data for reference if needed
+            };
+          });
+
           // Update sensor points heatmap
-          updateSensorHeatmap(filteredDetections);
+          updateSensorHeatmap(processedDetections);
 
           // Update chart with zone data
-          updateSideChart(filteredDetections);
+          updateSideChart(processedDetections);
 
           // Update activity table
-          updateActivityTable(filteredDetections);
+          updateActivityTable(processedDetections);
 
           // Update summary stats
-          updateSummaryStats(filteredDetections);
+          updateSummaryStats(processedDetections);
         } catch (error) {
           console.error("Error loading data:", error);
-          alert("Gagal memuat data deteksi. Mohon coba lagi.");
+          alert("Gagal memuat data deteksi dari API. Mohon coba lagi.");
         }
       }
 
@@ -740,8 +775,8 @@
           // Create table row
           row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formattedTime}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Sensor-${
-              detection.sensorId
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Zone-${
+              detection.originalData.zone
             }</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSideBadgeClass(
@@ -762,7 +797,6 @@
           tableBody.appendChild(row);
         });
       }
-
       // Get badge styling class based on side
       function getSideBadgeClass(side) {
         switch (side) {
@@ -797,25 +831,26 @@
         document.getElementById("totalDetections").textContent =
           detections.length;
 
-        // Busiest point
-        const pointCounts = {};
+        // Busiest zone/point
+        const zoneCounts = {};
         detections.forEach((d) => {
-          if (!pointCounts[d.sensorId]) pointCounts[d.sensorId] = 0;
-          pointCounts[d.sensorId]++;
+          const zone = d.originalData.zone;
+          if (!zoneCounts[zone]) zoneCounts[zone] = 0;
+          zoneCounts[zone]++;
         });
 
-        let busiestPoint = "-";
-        let maxPointCount = 0;
+        let busiestZone = "-";
+        let maxZoneCount = 0;
 
-        for (const [point, count] of Object.entries(pointCounts)) {
-          if (count > maxPointCount) {
-            maxPointCount = count;
-            busiestPoint = point;
+        for (const [zone, count] of Object.entries(zoneCounts)) {
+          if (count > maxZoneCount) {
+            maxZoneCount = count;
+            busiestZone = zone;
           }
         }
 
-        document.getElementById("busiestPoint").textContent = busiestPoint
-          ? `Sensor-${busiestPoint}`
+        document.getElementById("busiestPoint").textContent = busiestZone
+          ? `Zone-${busiestZone}`
           : "-";
 
         // Busiest side
@@ -842,7 +877,9 @@
           }
         }
 
-        document.getElementById("busiestSide").textContent = busiestSide;
+        // Update the busiest side display with both side name and count
+        document.getElementById("busiestSide").textContent =
+          busiestSide !== "-" ? `${busiestSide} (${maxSideCount})` : "-";
 
         // Busiest time (hour of day)
         const hourCounts = Array(24).fill(0);
@@ -868,15 +905,17 @@
           .padStart(2, "0")}:00 - ${hourTo.toString().padStart(2, "0")}:00`;
       }
 
-      // Set default dates (last 7 days)
-      function setDefaultDates() {
-        const today = new Date();
-        const lastWeek = new Date();
-        lastWeek.setDate(today.getDate() - 7);
+      // Modify the initialization to remove the mock data generation
+      document.addEventListener("DOMContentLoaded", function () {
+        initPerimeterSensors();
+        // generateMockData() - Removed this line as we're fetching real data
+        loadData();
 
-        document.getElementById("startDate").valueAsDate = lastWeek;
-        document.getElementById("endDate").valueAsDate = today;
-      }
+        // Setup event listeners
+        document
+          .getElementById("applyFilter")
+          .addEventListener("click", loadData);
+      });
 
       // Initialize with default dates
       setDefaultDates();
