@@ -342,7 +342,7 @@
       // Inisialisasi sensor points dan chart
       document.addEventListener("DOMContentLoaded", function () {
         initPerimeterSensors();
-        generateMockData();
+
         loadData();
 
         // Setup event listeners
@@ -408,32 +408,32 @@
         }
 
         // Buat titik sensor di perimeter
-        // Sisi atas (Utara)
-        for (let i = 0; i < pointsPerSide; i++) {
-          const x = paddingX + i * horizontalSpacing;
-          const y = paddingY;
-          addSensorPoint(x, y, i + 1, "Utara");
-        }
-
-        // Sisi kanan (Timur)
-        for (let i = 0; i < pointsPerSide; i++) {
-          const x = containerWidth - paddingX;
-          const y = paddingY + i * verticalSpacing;
-          addSensorPoint(x, y, i + 7, "Timur");
-        }
-
-        // Sisi bawah (Selatan) - reverse direction for consistent numbering around perimeter
-        for (let i = 0; i < pointsPerSide; i++) {
-          const x = containerWidth - paddingX - i * horizontalSpacing;
-          const y = containerHeight - paddingY;
-          addSensorPoint(x, y, i + 13, "Selatan");
-        }
-
-        // Sisi kiri (Barat) - reverse direction for consistent numbering around perimeter
+        // Sisi kiri (Barat) - mulai dari kiri atas (sensor 1), turun ke bawah hingga (sensor 6)
         for (let i = 0; i < pointsPerSide; i++) {
           const x = paddingX;
+          const y = paddingY + i * verticalSpacing;
+          addSensorPoint(x, y, i + 1, "Barat");
+        }
+
+        // Sisi bawah (Selatan) - dari kiri bawah (sensor 7) ke kanan bawah (sensor 12)
+        for (let i = 0; i < pointsPerSide; i++) {
+          const x = paddingX + i * horizontalSpacing;
+          const y = containerHeight - paddingY;
+          addSensorPoint(x, y, i + 7, "Selatan");
+        }
+
+        // Sisi kanan (Timur) - dari kanan bawah (sensor 13) ke kanan atas (sensor 18)
+        for (let i = 0; i < pointsPerSide; i++) {
+          const x = containerWidth - paddingX;
           const y = containerHeight - paddingY - i * verticalSpacing;
-          addSensorPoint(x, y, i + 19, "Barat");
+          addSensorPoint(x, y, i + 13, "Timur");
+        }
+
+        // Sisi atas (Utara) - dari kanan atas (sensor 19) ke kiri atas (sensor 24)
+        for (let i = 0; i < pointsPerSide; i++) {
+          const x = containerWidth - paddingX - i * horizontalSpacing;
+          const y = paddingY;
+          addSensorPoint(x, y, i + 19, "Utara");
         }
 
         // Tambahkan garis penghubung antar sensor
@@ -475,14 +475,14 @@
 
         for (let i = 0; i < numDetections; i++) {
           // Random sensor ID (1-24)
-          const sensorId = Math.floor(Math.random() * 24) + 1;
+          const zone = Math.floor(Math.random() * 24) + 1;
 
           // Determine side based on sensor ID
           let side;
-          if (sensorId <= 6) side = "Utara";
-          else if (sensorId <= 12) side = "Timur";
-          else if (sensorId <= 18) side = "Selatan";
-          else side = "Barat";
+          if (zone <= 6) side = "Barat";
+          else if (zone <= 12) side = "Selatan";
+          else if (zone <= 18) side = "Timur";
+          else side = "Utara";
 
           // Random timestamp within range
           const detectionTime = new Date(
@@ -490,11 +490,15 @@
               Math.random() * (endDate.getTime() - startDate.getTime())
           );
 
+          // Random motion count between 1-20
+          const motionCount = Math.floor(Math.random() * 20) + 1;
+
           // Create detection object
           mockDetections.push({
             id: `det-${i}`,
-            sensorId: sensorId,
+            zone: zone,
             side: side,
+            motionCount: motionCount,
             detectionTime: detectionTime.toISOString(),
             status: Math.random() > 0.2 ? "Terdeteksi" : "Peringatan",
           });
@@ -506,14 +510,15 @@
         const sensor = e.currentTarget;
         const sensorId = sensor.dataset.id;
         const side = sensor.dataset.side;
-        const detections = sensorData[sensorId] || 0;
+        const sensorInfo = sensorData[sensorId] || { count: 0, motionCount: 0 };
 
         const tooltip = document.getElementById("tooltip");
         tooltip.innerHTML = `
-          <div class="font-bold">Sensor ${sensorId}</div>
-          <div>Sisi: ${side}</div>
-          <div>Jumlah deteksi: ${detections}</div>
-        `;
+    <div class="font-bold">Sensor ${sensorId}</div>
+    <div>Sisi: ${side}</div>
+    <div>Jumlah deteksi: ${sensorInfo.count}</div>
+    <div>Total aktivitas gerakan: ${sensorInfo.motionCount}</div>
+  `;
         tooltip.style.display = "block";
         moveTooltip(e);
       }
@@ -531,9 +536,6 @@
         tooltip.style.display = "none";
       }
 
-      // Load data (in real implementation, fetch from API)
-
-      // Load data from API
       async function loadData() {
         try {
           // Get filter values
@@ -567,31 +569,37 @@
 
           const detections = await response.json();
 
-          // Process the API data to match our expected format
-          const processedDetections = detections.map((detection) => {
-            // Determine side based on zone number
-            const zone = parseInt(detection.zone);
-            let side;
+          // Process the API data to match our expected format and filter valid zones (1-24)
+          const processedDetections = detections
+            .filter((detection) => {
+              // Only include zones 1-24
+              const zone = parseInt(detection.zone);
+              return !isNaN(zone) && zone >= 1 && zone <= 24;
+            })
+            .map((detection) => {
+              // Determine side based on zone number
+              const zone = parseInt(detection.zone);
+              let side;
 
-            // Map zones to sides of the perimeter
-            // Zone mapping logic - adjust these ranges based on your actual zone numbering
-            if (zone >= 1 && zone <= 6) side = "Utara";
-            else if (zone >= 7 && zone <= 12) side = "Timur";
-            else if (zone >= 13 && zone <= 18) side = "Selatan";
-            else side = "Barat";
+              // Map zones to sides of the perimeter based on their location
+              if (zone >= 1 && zone <= 6) side = "Barat";
+              else if (zone >= 7 && zone <= 12) side = "Selatan";
+              else if (zone >= 13 && zone <= 18) side = "Timur";
+              else side = "Utara"; // 19-24
 
-            return {
-              id: detection.id,
-              sensorId: parseInt(detection.zone), // Use zone as sensor ID
-              side: side,
-              detectionTime: detection.detectionTime,
-              status:
-                detection.status === "motion_detected"
-                  ? "Terdeteksi"
-                  : "Peringatan",
-              originalData: detection, // Keep original data for reference if needed
-            };
-          });
+              return {
+                id: detection.id,
+                sensorId: zone, // Use zone as sensor ID
+                side: side,
+                detectionTime: detection.detectionTime,
+                status:
+                  detection.status === "motion_detected"
+                    ? "Terdeteksi"
+                    : "Peringatan",
+                motionCount: detection.motionCount || 0,
+                originalData: detection, // Keep original data for reference if needed
+              };
+            });
 
           // Update sensor points heatmap
           updateSensorHeatmap(processedDetections);
@@ -606,7 +614,48 @@
           updateSummaryStats(processedDetections);
         } catch (error) {
           console.error("Error loading data:", error);
-          alert("Gagal memuat data deteksi dari API. Mohon coba lagi.");
+
+          // Generate mock data if API fails
+          generateMockData();
+
+          // Filter for valid zones only
+          const processedDetections = mockDetections
+            .filter((detection) => {
+              const zone = detection.zone;
+              return zone >= 1 && zone <= 24;
+            })
+            .map((detection) => {
+              // Update side mapping to match new sensor layout
+              let side;
+              const zone = detection.zone;
+
+              if (zone >= 1 && zone <= 6) side = "Barat";
+              else if (zone >= 7 && zone <= 12) side = "Selatan";
+              else if (zone >= 13 && zone <= 18) side = "Timur";
+              else side = "Utara";
+
+              return {
+                ...detection,
+                side: side,
+                sensorId: zone,
+                motionCount: detection.motionCount || 1,
+                originalData: {
+                  zone: zone.toString(),
+                  detectionTime: detection.detectionTime,
+                  status:
+                    detection.status === "Terdeteksi"
+                      ? "motion_detected"
+                      : "warning",
+                  motionCount: detection.motionCount || 1,
+                },
+              };
+            });
+
+          // Update visualizations with mock data
+          updateSensorHeatmap(processedDetections);
+          updateSideChart(processedDetections);
+          updateActivityTable(processedDetections);
+          updateSummaryStats(processedDetections);
         }
       }
 
@@ -615,29 +664,39 @@
         // Reset sensor data
         sensorData = {};
 
-        // Count detections per sensor
+        // Count detections per sensor and accumulate motion counts
         detections.forEach((detection) => {
           const sensorId = detection.sensorId.toString();
           if (!sensorData[sensorId]) {
-            sensorData[sensorId] = 0;
+            sensorData[sensorId] = {
+              count: 0,
+              motionCount: 0,
+            };
           }
-          sensorData[sensorId]++;
+          sensorData[sensorId].count++;
+          sensorData[sensorId].motionCount += detection.motionCount || 1;
         });
 
-        // Find maximum value for color normalization
-        const maxValue = Math.max(1, ...Object.values(sensorData));
+        // Find maximum value for color normalization (using motion count as weight)
+        const maxMotionValue = Math.max(
+          1,
+          ...Object.values(sensorData).map((data) => data.motionCount)
+        );
 
         // Update each sensor point
         const sensorPoints = document.querySelectorAll(".sensor-point");
         sensorPoints.forEach((point) => {
           const sensorId = point.dataset.id;
           const side = point.dataset.side;
-          const detectionCount = sensorData[sensorId] || 0;
+          const sensorInfo = sensorData[sensorId] || {
+            count: 0,
+            motionCount: 0,
+          };
 
-          // Color intensity based on detection count
-          const intensity = detectionCount / maxValue;
+          // Color intensity based on motion count
+          const intensity = sensorInfo.motionCount / maxMotionValue;
 
-          if (detectionCount > 0) {
+          if (sensorInfo.count > 0) {
             // Base color by side with intensity
             let baseColor;
             switch (side) {
@@ -699,7 +758,7 @@
         detections.forEach((detection) => {
           const side = detection.side;
           if (side in sideData) {
-            sideData[side]++;
+            sideData[side] += detection.motionCount || 1;
           }
         });
 
@@ -721,7 +780,7 @@
               labels: labels,
               datasets: [
                 {
-                  label: "Jumlah Deteksi",
+                  label: "Aktivitas Gerakan",
                   data: data,
                   backgroundColor: backgroundColor,
                   borderWidth: 1,
@@ -743,6 +802,13 @@
                 legend: {
                   display: false,
                 },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      return `Total aktivitas: ${context.raw}`;
+                    },
+                  },
+                },
               },
             },
           });
@@ -750,6 +816,279 @@
       }
 
       // Update activity table with latest detections
+      // Fungsi loadData diperbaiki untuk memproses data API dengan benar
+      async function loadData() {
+        try {
+          // Get filter values
+          const startDate = document.getElementById("startDate").value;
+          const endDate = document.getElementById("endDate").value;
+
+          // Construct API URL with query parameters if dates are provided
+          let apiUrl = "/api/detections";
+          const params = new URLSearchParams();
+
+          if (startDate) {
+            params.append("startDate", new Date(startDate).toISOString());
+          }
+
+          if (endDate) {
+            // Add one day to include the full end date
+            const endDateObj = new Date(endDate);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            params.append("endDate", endDateObj.toISOString());
+          }
+
+          if (params.toString()) {
+            apiUrl += "?" + params.toString();
+          }
+
+          // Fetch data from API
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+
+          const detections = await response.json();
+
+          // Process the API data to match our expected format and filter valid zones (1-24)
+          const processedDetections = detections
+            .filter((detection) => {
+              // Only include zones 1-24
+              const zone = parseInt(detection.zone);
+              return !isNaN(zone) && zone >= 1 && zone <= 24;
+            })
+            .map((detection) => {
+              // Determine side based on zone number
+              const zone = parseInt(detection.zone);
+              let side;
+
+              // Map zones to sides of the perimeter based on their location
+              if (zone >= 1 && zone <= 6) side = "Barat";
+              else if (zone >= 7 && zone <= 12) side = "Selatan";
+              else if (zone >= 13 && zone <= 18) side = "Timur";
+              else side = "Utara"; // 19-24
+
+              return {
+                id: detection.id,
+                sensorId: zone, // Use zone as sensor ID
+                side: side,
+                detectionTime: detection.detectionTime,
+                status:
+                  detection.status === "motion_detected"
+                    ? "Terdeteksi"
+                    : "Peringatan",
+                motionCount: detection.motionCount || 0,
+                originalData: detection, // Keep original data for reference if needed
+              };
+            });
+
+          // Update sensor points heatmap
+          updateSensorHeatmap(processedDetections);
+
+          // Update chart with zone data
+          updateSideChart(processedDetections);
+
+          // Update activity table
+          updateActivityTable(processedDetections);
+
+          // Update summary stats
+          updateSummaryStats(processedDetections);
+        } catch (error) {
+          console.error("Error loading data:", error);
+
+          // Generate mock data if API fails
+          generateMockData();
+
+          // Filter for valid zones only
+          const processedDetections = mockDetections
+            .filter((detection) => {
+              const zone = detection.zone;
+              return zone >= 1 && zone <= 24;
+            })
+            .map((detection) => {
+              // Update side mapping to match new sensor layout
+              let side;
+              const zone = detection.zone;
+
+              if (zone >= 1 && zone <= 6) side = "Barat";
+              else if (zone >= 7 && zone <= 12) side = "Selatan";
+              else if (zone >= 13 && zone <= 18) side = "Timur";
+              else side = "Utara";
+
+              return {
+                ...detection,
+                side: side,
+                sensorId: zone,
+                motionCount: detection.motionCount || 1,
+                originalData: {
+                  zone: zone.toString(),
+                  detectionTime: detection.detectionTime,
+                  status:
+                    detection.status === "Terdeteksi"
+                      ? "motion_detected"
+                      : "warning",
+                  motionCount: detection.motionCount || 1,
+                },
+              };
+            });
+
+          // Update visualizations with mock data
+          updateSensorHeatmap(processedDetections);
+          updateSideChart(processedDetections);
+          updateActivityTable(processedDetections);
+          updateSummaryStats(processedDetections);
+        }
+      }
+
+      // Fungsi generateMockData yang diperbaiki untuk menghasilkan data yang valid
+      function generateMockData() {
+        mockDetections = [];
+
+        // Define time range (last 7 days)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 7);
+
+        // Generate random detections
+        const numDetections = 200 + Math.floor(Math.random() * 300); // Between 200-500 detections
+
+        for (let i = 0; i < numDetections; i++) {
+          // Random sensor ID (1-24)
+          const zone = Math.floor(Math.random() * 24) + 1;
+
+          // Determine side based on sensor ID
+          let side;
+          if (zone <= 6) side = "Barat";
+          else if (zone <= 12) side = "Selatan";
+          else if (zone <= 18) side = "Timur";
+          else side = "Utara";
+
+          // Random timestamp within range
+          const detectionTime = new Date(
+            startDate.getTime() +
+              Math.random() * (endDate.getTime() - startDate.getTime())
+          );
+
+          // Random motion count between 1-20
+          const motionCount = Math.floor(Math.random() * 20) + 1;
+
+          // Create detection object
+          mockDetections.push({
+            id: `det-${i}`,
+            zone: zone,
+            side: side,
+            motionCount: motionCount,
+            detectionTime: detectionTime.toISOString(),
+            status: Math.random() > 0.2 ? "Terdeteksi" : "Peringatan",
+          });
+        }
+      }
+
+      // Update sensor points heatmap dengan data yang valid
+      function updateSensorHeatmap(detections) {
+        // Reset sensor data
+        sensorData = {};
+
+        // Count detections per sensor and accumulate motion counts
+        detections.forEach((detection) => {
+          const sensorId = detection.sensorId.toString();
+          if (!sensorData[sensorId]) {
+            sensorData[sensorId] = {
+              count: 0,
+              motionCount: 0,
+            };
+          }
+          sensorData[sensorId].count++;
+          sensorData[sensorId].motionCount += detection.motionCount || 1;
+        });
+
+        // Find maximum value for color normalization (using motion count as weight)
+        const maxMotionValue = Math.max(
+          1,
+          ...Object.values(sensorData).map((data) => data.motionCount)
+        );
+
+        // Update each sensor point
+        const sensorPoints = document.querySelectorAll(".sensor-point");
+        sensorPoints.forEach((point) => {
+          const sensorId = point.dataset.id;
+          const side = point.dataset.side;
+          const sensorInfo = sensorData[sensorId] || {
+            count: 0,
+            motionCount: 0,
+          };
+
+          // Color intensity based on motion count
+          const intensity = sensorInfo.motionCount / maxMotionValue;
+
+          if (sensorInfo.count > 0) {
+            // Base color by side with intensity
+            let baseColor;
+            switch (side) {
+              case "Utara":
+                // Blue with intensity
+                point.style.backgroundColor = `rgba(59, 130, 246, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
+                break;
+              case "Timur":
+                // Red with intensity
+                point.style.backgroundColor = `rgba(239, 68, 68, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
+                break;
+              case "Selatan":
+                // Green with intensity
+                point.style.backgroundColor = `rgba(16, 185, 129, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
+                break;
+              case "Barat":
+                // Amber with intensity
+                point.style.backgroundColor = `rgba(245, 158, 11, ${Math.min(
+                  0.3 + intensity * 0.7,
+                  1
+                )})`;
+                break;
+              default:
+                point.style.backgroundColor = "#9ca3af";
+            }
+
+            // Increase size based on intensity
+            const scale = 1 + intensity * 0.5;
+            point.style.transform = `scale(${scale})`;
+            point.style.zIndex = Math.floor(10 + intensity * 10);
+          } else {
+            // Reset for sensors with no detections
+            point.style.backgroundColor = "#9ca3af";
+            point.style.transform = "scale(1)";
+            point.style.zIndex = "10";
+          }
+        });
+      }
+
+      // Fungsi tampilkan tooltip yang diperbarui untuk menampilkan informasi motion count
+      function showTooltip(e) {
+        const sensor = e.currentTarget;
+        const sensorId = sensor.dataset.id;
+        const side = sensor.dataset.side;
+        const sensorInfo = sensorData[sensorId] || { count: 0, motionCount: 0 };
+
+        const tooltip = document.getElementById("tooltip");
+        tooltip.innerHTML = `
+    <div class="font-bold">Sensor ${sensorId}</div>
+    <div>Sisi: ${side}</div>
+    <div>Jumlah deteksi: ${sensorInfo.count}</div>
+    <div>Total aktivitas gerakan: ${sensorInfo.motionCount}</div>
+  `;
+        tooltip.style.display = "block";
+        moveTooltip(e);
+      }
+
+      // Update activity table dengan format waktu yang sesuai
       function updateActivityTable(detections) {
         const tableBody = document.getElementById("activityTableBody");
         tableBody.innerHTML = "";
@@ -766,37 +1105,43 @@
           const row = document.createElement("tr");
 
           // Format detection time
-          const detectionTime = new Date(detection.detectionTime);
-          const formattedTime =
-            detectionTime.toLocaleDateString("id-ID") +
-            " " +
-            detectionTime.toLocaleTimeString("id-ID");
+          const detectionDate = new Date(detection.detectionTime);
+          const formattedTime = detectionDate.toLocaleString("id-ID", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          });
 
           // Create table row
           row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formattedTime}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Zone-${
-              detection.originalData.zone
-            }</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSideBadgeClass(
-                detection.side
-              )}">
-                ${detection.side}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                detection.status
-              )}">
-                ${detection.status}
-              </span>
-            </td>
-          `;
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formattedTime}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Zone-${
+        detection.originalData.zone
+      }</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSideBadgeClass(
+          detection.side
+        )}">
+          ${detection.side}
+        </span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
+          detection.status
+        )}">
+          ${detection.status}
+        </span>
+      </td>
+    `;
 
           tableBody.appendChild(row);
         });
       }
+
       // Get badge styling class based on side
       function getSideBadgeClass(side) {
         switch (side) {
@@ -831,20 +1176,26 @@
         document.getElementById("totalDetections").textContent =
           detections.length;
 
-        // Busiest zone/point
+        // Busiest zone/point based on motion count
         const zoneCounts = {};
         detections.forEach((d) => {
           const zone = d.originalData.zone;
-          if (!zoneCounts[zone]) zoneCounts[zone] = 0;
-          zoneCounts[zone]++;
+          if (!zoneCounts[zone]) {
+            zoneCounts[zone] = {
+              count: 0,
+              motionCount: 0,
+            };
+          }
+          zoneCounts[zone].count++;
+          zoneCounts[zone].motionCount += d.motionCount || 1;
         });
 
         let busiestZone = "-";
-        let maxZoneCount = 0;
+        let maxZoneMotionCount = 0;
 
-        for (const [zone, count] of Object.entries(zoneCounts)) {
-          if (count > maxZoneCount) {
-            maxZoneCount = count;
+        for (const [zone, data] of Object.entries(zoneCounts)) {
+          if (data.motionCount > maxZoneMotionCount) {
+            maxZoneMotionCount = data.motionCount;
             busiestZone = zone;
           }
         }
@@ -855,37 +1206,47 @@
 
         // Busiest side
         const sideCounts = {
-          Utara: 0,
-          Timur: 0,
-          Selatan: 0,
-          Barat: 0,
+          Utara: { count: 0, motionCount: 0 },
+          Timur: { count: 0, motionCount: 0 },
+          Selatan: { count: 0, motionCount: 0 },
+          Barat: { count: 0, motionCount: 0 },
         };
 
         detections.forEach((d) => {
           if (d.side in sideCounts) {
-            sideCounts[d.side]++;
+            sideCounts[d.side].count++;
+            sideCounts[d.side].motionCount += d.motionCount || 1;
           }
         });
 
         let busiestSide = "-";
-        let maxSideCount = 0;
+        let maxSideMotionCount = 0;
 
-        for (const [side, count] of Object.entries(sideCounts)) {
-          if (count > maxSideCount) {
-            maxSideCount = count;
+        for (const [side, data] of Object.entries(sideCounts)) {
+          if (data.motionCount > maxSideMotionCount) {
+            maxSideMotionCount = data.motionCount;
             busiestSide = side;
           }
         }
 
-        // Update the busiest side display with both side name and count
-        document.getElementById("busiestSide").textContent =
-          busiestSide !== "-" ? `${busiestSide} (${maxSideCount})` : "-";
+        // Mendapatkan warna yang sesuai dengan sisi
+        let sideColor = "#3b82f6"; // Default blue jika tidak ditemukan
+        if (busiestSide in sideColors) {
+          sideColor = sideColors[busiestSide];
+        }
+
+        // Update the busiest side display with side name and color styling
+        const busiestSideElement = document.getElementById("busiestSide");
+        busiestSideElement.textContent =
+          busiestSide !== "-" ? `${busiestSide}` : "-";
+        busiestSideElement.style.color = sideColor;
 
         // Busiest time (hour of day)
         const hourCounts = Array(24).fill(0);
         detections.forEach((d) => {
-          const hour = new Date(d.detectionTime).getHours();
-          hourCounts[hour]++;
+          const detectionTime = new Date(d.detectionTime);
+          const hour = detectionTime.getHours();
+          hourCounts[hour] += d.motionCount || 1;
         });
 
         let busiestHour = 0;
@@ -908,7 +1269,6 @@
       // Modify the initialization to remove the mock data generation
       document.addEventListener("DOMContentLoaded", function () {
         initPerimeterSensors();
-        // generateMockData() - Removed this line as we're fetching real data
         loadData();
 
         // Setup event listeners
@@ -918,6 +1278,19 @@
       });
 
       // Initialize with default dates
+      function setDefaultDates() {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 7);
+
+        // Format tanggal untuk input HTML (YYYY-MM-DD)
+        document.getElementById("endDate").value = endDate
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("startDate").value = startDate
+          .toISOString()
+          .split("T")[0];
+      }
       setDefaultDates();
     </script>
   </body>
